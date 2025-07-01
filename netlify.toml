@@ -8,7 +8,8 @@
   command = "npm run build"
   
   # Directorio que se publicará después de la construcción
-  publish = "frontend/build"
+  # CORRECCIÓN: Se cambió de "frontend/build" a solo "build"
+  publish = "build"
 
 # Regla para que las rutas de React funcionen correctamente
 [[redirects]]
