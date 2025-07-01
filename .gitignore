@@ -1,0 +1,24 @@
+# Archivo para ignorar archivos y carpetas en Git
+
+# Ignorar las carpetas de dependencias en ambos proyectos
+# Estas carpetas se generan al ejecutar "npm install"
+/backend/node_modules
+/frontend/node_modules
+
+# Ignorar los archivos de variables de entorno
+# Estos archivos contienen información sensible como contraseñas y claves de API
+/backend/.env
+/frontend/.env
+
+# Ignorar la carpeta de producción del frontend
+# Esta carpeta se genera al ejecutar "npm run build"
+/frontend/build
+
+# Ignorar logs de errores y de depuración
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Ignorar archivos del sistema operativo
+.DS_Store
+Thumbs.db
