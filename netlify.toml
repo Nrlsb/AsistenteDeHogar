@@ -1,0 +1,17 @@
+# Configuración para el despliegue en Netlify
+
+[build]
+  # Directorio base donde se ejecutará el comando de construcción
+  base = "frontend"
+  
+  # Comando para construir el proyecto
+  command = "npm run build"
+  
+  # Directorio que se publicará después de la construcción
+  publish = "frontend/build"
+
+# Regla para que las rutas de React funcionen correctamente
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
