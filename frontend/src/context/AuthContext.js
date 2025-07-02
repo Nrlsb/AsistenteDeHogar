@@ -1,16 +1,16 @@
 import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
 import { registerUser, loginUser } from '../services/apiService';
 
-// Creamos el contexto con un valor inicial más completo
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [error, setError] = useState(null);
-    // Estado para saber si una operación de autenticación está en curso
     const [loading, setLoading] = useState(false);
+    // NUEVO ESTADO: Rastrea si la verificación inicial de autenticación ha terminado.
+    const [isAuthReady, setIsAuthReady] = useState(false);
 
-    // Al cargar la app, revisamos si hay un usuario en localStorage
+    // Este efecto se ejecuta solo una vez, cuando la aplicación se carga por primera vez.
     useEffect(() => {
         try {
             const storedUser = localStorage.getItem('user');
@@ -20,10 +20,13 @@ export const AuthProvider = ({ children }) => {
         } catch (e) {
             console.error("Fallo al leer usuario de localStorage", e);
             localStorage.removeItem('user');
+        } finally {
+            // Marcamos la verificación inicial como completa, para que App.js pueda renderizar.
+            setIsAuthReady(true);
         }
     }, []);
 
-    // Función genérica para manejar el login y registro
+    // Función genérica para manejar tanto el login como el registro
     const handleAuth = useCallback(async (authPromise) => {
         setError(null);
         setLoading(true);
@@ -34,7 +37,6 @@ export const AuthProvider = ({ children }) => {
             setUser(userData);
             return { success: true };
         } catch (err) {
-            // Centralizamos el manejo de errores aquí
             const errorMessage = err.response?.data?.message || 'Error de red. Por favor, inténtalo de nuevo.';
             setError(errorMessage);
             console.error("Error de autenticación:", err);
@@ -57,8 +59,8 @@ export const AuthProvider = ({ children }) => {
         setUser(null);
     }, []);
 
-    // El valor del contexto ahora incluye los estados de carga y error
-    const value = { user, error, loading, login, register, logout, clearError: () => setError(null) };
+    // Exponemos el nuevo estado 'isAuthReady' en el valor del contexto
+    const value = { user, error, loading, isAuthReady, login, register, logout, clearError: () => setError(null) };
 
     return (
         <AuthContext.Provider value={value}>
@@ -67,7 +69,6 @@ export const AuthProvider = ({ children }) => {
     );
 };
 
-// Hook personalizado para usar el contexto
 export const useAuth = () => {
     const context = useContext(AuthContext);
     if (context === undefined) {
