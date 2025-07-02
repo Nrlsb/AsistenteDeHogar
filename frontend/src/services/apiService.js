@@ -1,62 +1,65 @@
-import axios from 'axios';
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
-// La URL de la API ahora apunta a una ruta relativa.
-// Netlify usará la regla del proxy en `netlify.toml` para redirigir
-// estas llamadas a tu backend en Render.
-const API_URL = '/api';
-
-const api = axios.create({
-    baseURL: API_URL,
-});
-
-// Interceptor para añadir el token de autenticación a cada solicitud.
-// Se ha corregido para manejar de forma segura el caso en que no hay usuario en localStorage.
-api.interceptors.request.use(config => {
-    // Obtenemos el usuario del localStorage
-    const userStr = localStorage.getItem('user');
-
-    // Si existe, parseamos el JSON y añadimos el token al header Authorization
-    if (userStr) {
-        try {
-            const { token } = JSON.parse(userStr);
-            if (token) {
-                config.headers.Authorization = `Bearer ${token}`;
-            }
-        } catch (error) {
-            console.error("Error al parsear el usuario desde localStorage", error);
+const apiService = {
+    request: async (endpoint, method = 'GET', body = null) => {
+        const headers = { 'Content-Type': 'application/json' };
+        const token = localStorage.getItem('token');
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
         }
-    }
-    return config;
-}, error => {
-    // Manejo de errores en la solicitud
-    return Promise.reject(error);
-});
 
-// --- Servicios de Autenticación ---
-export const registerUser = (userData) => api.post('/auth/register', userData);
-export const loginUser = (userData) => api.post('/auth/login', userData);
+        const config = { method, headers };
+        if (body) {
+            config.body = JSON.stringify(body);
+        }
 
-// --- Servicios de Tareas ---
-export const getTasks = () => api.get('/tasks');
-export const addTask = (taskData) => api.post('/tasks', taskData);
-export const updateTask = (id, taskData) => api.put(`/tasks/${id}`, taskData);
-export const deleteTask = (id) => api.delete(`/tasks/${id}`);
+        try {
+            const response = await fetch(`${API_URL}${endpoint}`, config);
+            if (!response.ok) {
+                if (response.status === 401) {
+                   localStorage.removeItem('token');
+                   window.location.reload();
+                }
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Algo salió mal');
+            }
+            if (response.status === 204 || response.headers.get("content-length") === "0") {
+                return null;
+            }
+            return await response.json();
+        } catch (error) {
+            console.error(`Error en la petición a ${endpoint}:`, error);
+            throw error;
+        }
+    },
 
-// --- Servicios de Compras ---
-export const getShoppingItems = () => api.get('/shopping');
-export const addShoppingItem = (itemData) => api.post('/shopping', itemData);
-export const updateShoppingItem = (id, itemData) => api.put(`/shopping/${id}`, itemData);
-export const deleteShoppingItem = (id) => api.delete(`/shopping/${id}`);
+    // Auth
+    login: (credentials) => apiService.request('/auth/login', 'POST', credentials),
+    register: (credentials) => apiService.request('/auth/register', 'POST', credentials),
 
-// --- Servicios de Gastos ---
-export const getExpenses = () => api.get('/expenses');
-export const addExpense = (expenseData) => api.post('/expenses', expenseData);
-export const deleteExpense = (id) => api.delete(`/expenses/${id}`);
+    // Tasks
+    getTasks: () => apiService.request('/tasks'),
+    createTask: (task) => apiService.request('/tasks', 'POST', task),
+    updateTask: (id) => apiService.request(`/tasks/${id}`, 'PUT'),
+    deleteTask: (id) => apiService.request(`/tasks/${id}`, 'DELETE'),
 
-// --- Servicios de Comidas ---
-export const getMealPlans = () => api.get('/meals');
-export const addMealPlan = (mealData) => api.post('/meals', mealData);
-export const updateMealPlan = (id, mealData) => api.put(`/meals/${id}`, mealData);
-export const deleteMealPlan = (id) => api.delete(`/meals/${id}`);
+    // Shopping
+    getShoppingCategories: () => apiService.request('/shopping/categories'),
+    createShoppingCategory: (category) => apiService.request('/shopping/categories', 'POST', category),
+    deleteShoppingCategory: (id) => apiService.request(`/shopping/categories/${id}`, 'DELETE'),
+    getShoppingItems: () => apiService.request('/shopping/items'),
+    createShoppingItem: (item) => apiService.request('/shopping/items', 'POST', item),
+    updateShoppingItem: (id) => apiService.request(`/shopping/items/${id}`, 'PUT'),
+    clearPurchasedItems: () => apiService.request('/shopping/items/purchased', 'DELETE'),
 
-export default api;
+    // Expenses
+    getExpenses: () => apiService.request('/expenses'),
+    createExpense: (expense) => apiService.request('/expenses', 'POST', expense),
+    deleteExpense: (id) => apiService.request(`/expenses/${id}`, 'DELETE'),
+
+    // Meals
+    getMealPlan: () => apiService.request('/meals'),
+    updateMealPlan: (plan) => apiService.request('/meals', 'PUT', plan),
+};
+
+export default apiService;
