@@ -1,17 +1,17 @@
 # Configuración base de construcción para el frontend
 [build]
-  # Comando para construir el proyecto de React
-  command = "npm run build"
-  # Directorio donde se guardan los archivos de producción
-  publish = "frontend/build"
-  # Directorio base del proyecto de frontend
+  # Directorio base del proyecto de frontend. Netlify se moverá a esta carpeta antes de construir.
   base = "frontend"
+  # Comando para construir el proyecto de React. Se ejecuta desde el directorio base.
+  command = "npm run build"
+  # Directorio donde se guardan los archivos de producción. Es relativo al directorio base.
+  publish = "build"
 
 # Redirección de proxy para las llamadas a la API.
-# ¡ACCIÓN REQUERIDA! Reemplaza la URL de abajo con la URL real de tu backend desplegado en Render.
+# ¡ACCIÓN REQUERIDA! Asegúrate de que esta URL sea la de tu backend en Render.
 [[redirects]]
   from = "/api/*"
-  to = "https://asistentedehogarapi.onrender.com" # <--- CAMBIA ESTA URL
+  to = "https://asistentedehogarapi.onrender.com" # <--- VERIFICA ESTA URL
   status = 200
   force = true
 
