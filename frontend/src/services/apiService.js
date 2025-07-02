@@ -10,12 +10,8 @@ const api = axios.create({
 });
 
 // Interceptor para añadir el token de autenticación a cada solicitud.
-// Se ha corregido para manejar de forma segura el caso en que no hay usuario en localStorage.
 api.interceptors.request.use(config => {
-    // Obtenemos el usuario del localStorage
     const userStr = localStorage.getItem('user');
-
-    // Si existe, parseamos el JSON y añadimos el token al header Authorization
     if (userStr) {
         try {
             const { token } = JSON.parse(userStr);
@@ -28,7 +24,6 @@ api.interceptors.request.use(config => {
     }
     return config;
 }, error => {
-    // Manejo de errores en la solicitud
     return Promise.reject(error);
 });
 
@@ -59,4 +54,6 @@ export const addMealPlan = (mealData) => api.post('/meals', mealData);
 export const updateMealPlan = (id, mealData) => api.put(`/meals/${id}`, mealData);
 export const deleteMealPlan = (id) => api.delete(`/meals/${id}`);
 
-export default api;
+// NOTA: Se eliminó el 'export default api' para usar solo exportaciones nombradas,
+// lo que previene los errores de "is not a function".
+
