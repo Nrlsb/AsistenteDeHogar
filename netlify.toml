@@ -11,7 +11,7 @@
 # ¡ACCIÓN REQUERIDA! Asegúrate de que esta URL sea la de tu backend en Render.
 [[redirects]]
   from = "/api/*"
-  to = "https://asistentedehogarapi.onrender.com" # <--- VERIFICA ESTA URL
+  to = "https://asistentedehogarapi.onrender.com/api/:splat" # <--- VERIFICA ESTA URL
   status = 200
   force = true
 
