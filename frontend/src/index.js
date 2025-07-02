@@ -1,8 +1,8 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
-// Si tienes un archivo de CSS global, impórtalo aquí.
-// import './index.css';
+// Importa los estilos de Tailwind
+import './index.css';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
