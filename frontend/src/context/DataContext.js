@@ -2,7 +2,33 @@ import React, { createContext, useState, useContext, useEffect, useCallback } fr
 import * as api from '../services/apiService'; // Importamos todas las funciones de la API
 import { useAuth } from './AuthContext';
 
-const DataContext = createContext();
+// 1. Se crea un valor por defecto para el contexto.
+// Esto previene que la aplicación se rompa si un componente intenta
+// usar el contexto sin que un Provider esté disponible.
+const defaultDataContext = {
+    tasks: [],
+    loadingTasks: false,
+    addTask: () => {},
+    updateTask: () => {},
+    deleteTask: () => {},
+    shoppingItems: [],
+    loadingShopping: false,
+    addShoppingItem: () => {},
+    updateShoppingItem: () => {},
+    deleteShoppingItem: () => {},
+    meals: [],
+    loadingMeals: false,
+    addMealPlan: () => {},
+    deleteMealPlan: () => {},
+    expenses: [],
+    loadingExpenses: false,
+    addExpense: () => {},
+    deleteExpense: () => {},
+    error: null,
+};
+
+// 2. Se usa el valor por defecto al crear el contexto.
+const DataContext = createContext(defaultDataContext);
 
 export const DataProvider = ({ children }) => {
     const { user } = useAuth();
@@ -145,6 +171,8 @@ export const DataProvider = ({ children }) => {
     return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
 };
 
+// 3. El hook ahora simplemente devuelve el contexto.
+// Ya no necesita una comprobación extra porque siempre habrá un valor por defecto.
 export const useData = () => {
     return useContext(DataContext);
 };
