@@ -1,46 +1,51 @@
-// 1. IMPORTACIONES
 const express = require('express');
+const dotenv = require('dotenv');
 const mongoose = require('mongoose');
 const cors = require('cors');
-require('dotenv').config();
 
-// IMPORTAR RUTAS
+dotenv.config();
+
 const authRoutes = require('./routes/authRoutes');
 const taskRoutes = require('./routes/taskRoutes');
 const shoppingRoutes = require('./routes/shoppingRoutes');
-const expenseRoutes = require('./routes/expenseRoutes');
 const mealRoutes = require('./routes/mealRoutes');
+const expenseRoutes = require('./routes/expenseRoutes');
 
-// 2. CONFIGURACIÓN INICIAL
 const app = express();
-const PORT = process.env.PORT || 5000;
 
-// 3. MIDDLEWARE GLOBAL
-
-// --- INICIO DE LA CORRECCIÓN DE CORS ---
-const corsOptions = {
-  origin: process.env.FRONTEND_URL, // Permite solo peticiones desde la URL del frontend
-  optionsSuccessStatus: 200 
-};
-app.use(cors(corsOptions));
-// --- FIN DE LA CORRECCIÓN DE CORS ---
-
+// Middleware
+app.use(cors());
 app.use(express.json());
 
-// 4. CONEXIÓN A LA BASE DE DATOS
-mongoose.connect(process.env.MONGO_URI)
-    .then(() => console.log('✅ Conectado a MongoDB Atlas'))
-    .catch((err) => console.error('❌ Error al conectar a MongoDB:', err));
+// --- NUEVA RUTA DE HEALTH CHECK ---
+// Puedes visitar la URL de tu backend (ej: https://asistentedehogar-backend.onrender.com)
+// para verificar que el servidor está corriendo y para "despertarlo".
+app.get('/', (req, res) => {
+    res.send('Asistente de Hogar API is running!');
+});
 
-// 5. RUTAS DE LA API
+// Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/shopping', shoppingRoutes);
-app.use('/api/expenses', expenseRoutes);
 app.use('/api/meals', mealRoutes);
+app.use('/api/expenses', expenseRoutes);
 
 
-// 6. INICIAR EL SERVIDOR
-app.listen(PORT, () => {
-    console.log(`🚀 Servidor corriendo en el puerto ${PORT}`);
+const PORT = process.env.PORT || 5000;
+
+// Database Connection
+mongoose.connect(process.env.MONGO_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+})
+.then(() => {
+    console.log('MongoDB Connected');
+    app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+})
+.catch(err => {
+    console.error('MongoDB connection error:', err)
+    // Si la conexión falla, el proceso se detendrá.
+    // Esto hará que Render muestre un error en los logs.
+    process.exit(1);
 });
