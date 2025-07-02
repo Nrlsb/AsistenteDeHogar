@@ -1,62 +1,60 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import apiService from '../../services/apiService';
-import { debounce } from 'lodash';
+import React, { useState } from 'react';
+import { useData } from '../../context/DataContext';
 
-export default function MealsSection() {
-    const [plan, setPlan] = useState({});
-    const [loading, setLoading] = useState(true);
-    const days = useMemo(() => ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'], []);
-    const meals = useMemo(() => ['Desayuno', 'Almuerzo', 'Cena'], []);
+const MealsSection = () => {
+    const { meals, addMealPlan, deleteMealPlan, loadingMeals, error } = useData();
+    const [day, setDay] = useState('Lunes');
+    const [meal, setMeal] = useState('');
 
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const data = await apiService.getMealPlan();
-                setPlan(data);
-            } catch (error) {
-                console.error("Error al cargar plan de comidas:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchData();
-    }, []);
-
-    const debouncedUpdate = useCallback(debounce(updatedPlan => {
-        apiService.updateMealPlan(updatedPlan);
-    }, 1000), []);
-
-    const handleChange = (day, meal, value) => {
-        const newPlan = { ...plan, [day]: { ...plan[day], [meal]: value } };
-        setPlan(newPlan);
-        debouncedUpdate(newPlan);
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        if (meal.trim()) {
+            addMealPlan({ day, meal });
+            setMeal('');
+        }
     };
 
-    if (loading) return <div className="text-center p-10">Cargando planificador...</div>;
-
     return (
-        <div className="bg-white p-6 rounded-lg shadow-sm">
-            <h2 className="text-2xl font-bold mb-4">Planificador de Comidas Semanal</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {days.map(day => (
-                    <div key={day} className="bg-gray-50 p-4 rounded-lg border">
-                        <h3 className="font-bold text-lg mb-3">{day}</h3>
-                        <div className="space-y-2">
-                            {meals.map(meal => (
-                                <div key={meal}>
-                                    <label className="block text-sm font-medium">{meal}</label>
-                                    <input
-                                        type="text"
-                                        value={plan[day]?.[meal] || ''}
-                                        onChange={e => handleChange(day, meal, e.target.value)}
-                                        className="mt-1 block w-full p-2 border rounded-md"
-                                    />
-                                </div>
-                            ))}
+        <div className="p-4 bg-white rounded-lg shadow">
+            <h2 className="text-2xl font-bold mb-4">Plan de Comidas</h2>
+            <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <select value={day} onChange={(e) => setDay(e.target.value)} className="p-2 border rounded-md">
+                    {['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'].map(d => (
+                        <option key={d} value={d}>{d}</option>
+                    ))}
+                </select>
+                <input
+                    type="text"
+                    value={meal}
+                    onChange={(e) => setMeal(e.target.value)}
+                    placeholder="¿Qué vas a comer?"
+                    className="md:col-span-2 p-2 border rounded-md"
+                />
+                <button type="submit" className="md:col-span-3 bg-yellow-500 text-white p-2 rounded-md hover:bg-yellow-600">
+                    Añadir al Plan
+                </button>
+            </form>
+
+            {loadingMeals && <p>Cargando plan de comidas...</p>}
+            {error && <p className="text-red-500">{error}</p>}
+
+            <div className="space-y-4">
+                {meals.length > 0 ? (
+                    meals.map(plan => (
+                        <div key={plan._id} className="p-2 border rounded-md">
+                            <h3 className="font-bold">{plan.day}</h3>
+                            <div className="flex justify-between items-center">
+                                <p>{plan.meal}</p>
+                                <button onClick={() => deleteMealPlan(plan._id)} className="text-red-500 text-sm">Eliminar</button>
+                            </div>
                         </div>
-                    </div>
-                ))}
+                    ))
+                ) : (
+                    !loadingMeals && <p>No hay comidas planificadas.</p>
+                )}
             </div>
         </div>
     );
-}
+};
+
+export default MealsSection;

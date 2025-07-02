@@ -1,76 +1,145 @@
 import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
-import { 
-    getTasks, addTask as apiAddTask, updateTask as apiUpdateTask, deleteTask as apiDeleteTask 
-} from '../services/apiService';
+import * as api from '../services/apiService'; // Importamos todas las funciones de la API
 import { useAuth } from './AuthContext';
 
 const DataContext = createContext();
 
 export const DataProvider = ({ children }) => {
-    const [tasks, setTasks] = useState([]);
-    // Aquí se añadirían los otros estados (shoppingItems, meals, etc.)
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
     const { user } = useAuth();
 
-    const fetchTasks = useCallback(async () => {
-        try {
-            setLoading(true);
-            const { data } = await getTasks();
-            setTasks(data);
-        } catch (err) {
-            setError('No se pudieron cargar las tareas.');
-            console.error(err);
-        } finally {
-            setLoading(false);
-        }
-    }, []);
+    // Estados para cada tipo de dato
+    const [tasks, setTasks] = useState([]);
+    const [shoppingItems, setShoppingItems] = useState([]);
+    const [meals, setMeals] = useState([]);
+    const [expenses, setExpenses] = useState([]);
 
-    useEffect(() => {
-        // Si hay un usuario, cargamos sus tareas.
-        if (user) {
-            fetchTasks();
-        }
-    }, [user, fetchTasks]);
+    const [loading, setLoading] = useState({ tasks: false, shopping: false, meals: false, expenses: false });
+    const [error, setError] = useState(null);
+
+    // --- Lógica de Tareas ---
+    const fetchTasks = useCallback(async () => {
+        if (!user) return;
+        setLoading(prev => ({ ...prev, tasks: true }));
+        try {
+            const { data } = await api.getTasks();
+            setTasks(data);
+        } catch (err) { setError('No se pudieron cargar las tareas.'); } 
+        finally { setLoading(prev => ({ ...prev, tasks: false })); }
+    }, [user]);
 
     const addTask = async (taskData) => {
         try {
-            const { data } = await apiAddTask(taskData);
-            setTasks(prevTasks => [...prevTasks, data]);
-        } catch (err) {
-            setError('Error al añadir la tarea.');
-            console.error(err);
-        }
+            const { data } = await api.addTask(taskData);
+            setTasks(prev => [...prev, data]);
+        } catch (err) { setError('Error al añadir la tarea.'); }
     };
-
     const updateTask = async (id, taskData) => {
         try {
-            const { data } = await apiUpdateTask(id, taskData);
-            setTasks(prevTasks => prevTasks.map(task => (task._id === id ? data : task)));
-        } catch (err) {
-            setError('Error al actualizar la tarea.');
-            console.error(err);
-        }
+            const { data } = await api.updateTask(id, taskData);
+            setTasks(prev => prev.map(t => (t._id === id ? data : t)));
+        } catch (err) { setError('Error al actualizar la tarea.'); }
     };
-
     const deleteTask = async (id) => {
         try {
-            await apiDeleteTask(id);
-            setTasks(prevTasks => prevTasks.filter(task => task._id !== id));
-        } catch (err) {
-            setError('Error al eliminar la tarea.');
-            console.error(err);
-        }
+            await api.deleteTask(id);
+            setTasks(prev => prev.filter(t => t._id !== id));
+        } catch (err) { setError('Error al eliminar la tarea.'); }
     };
 
+    // --- Lógica de Compras ---
+    const fetchShoppingItems = useCallback(async () => {
+        if (!user) return;
+        setLoading(prev => ({ ...prev, shopping: true }));
+        try {
+            const { data } = await api.getShoppingItems();
+            setShoppingItems(data);
+        } catch (err) { setError('No se pudieron cargar los artículos de compra.'); }
+        finally { setLoading(prev => ({ ...prev, shopping: false })); }
+    }, [user]);
+
+    const addShoppingItem = async (itemData) => {
+        try {
+            const { data } = await api.addShoppingItem(itemData);
+            setShoppingItems(prev => [...prev, data]);
+        } catch (err) { setError('Error al añadir el artículo.'); }
+    };
+    const updateShoppingItem = async (id, itemData) => {
+        try {
+            const { data } = await api.updateShoppingItem(id, itemData);
+            setShoppingItems(prev => prev.map(i => (i._id === id ? data : i)));
+        } catch (err) { setError('Error al actualizar el artículo.'); }
+    };
+    const deleteShoppingItem = async (id) => {
+        try {
+            await api.deleteShoppingItem(id);
+            setShoppingItems(prev => prev.filter(i => i._id !== id));
+        } catch (err) { setError('Error al eliminar el artículo.'); }
+    };
+
+    // --- Lógica de Comidas ---
+     const fetchMeals = useCallback(async () => {
+        if (!user) return;
+        setLoading(prev => ({ ...prev, meals: true }));
+        try {
+            const { data } = await api.getMealPlans();
+            setMeals(data);
+        } catch (err) { setError('No se pudieron cargar los planes de comida.'); }
+        finally { setLoading(prev => ({ ...prev, meals: false })); }
+    }, [user]);
+
+    const addMealPlan = async (mealData) => {
+        try {
+            const { data } = await api.addMealPlan(mealData);
+            setMeals(prev => [...prev, data]);
+        } catch (err) { setError('Error al añadir el plan de comida.'); }
+    };
+    const deleteMealPlan = async (id) => {
+        try {
+            await api.deleteMealPlan(id);
+            setMeals(prev => prev.filter(m => m._id !== id));
+        } catch (err) { setError('Error al eliminar el plan de comida.'); }
+    };
+
+    // --- Lógica de Gastos ---
+    const fetchExpenses = useCallback(async () => {
+        if (!user) return;
+        setLoading(prev => ({ ...prev, expenses: true }));
+        try {
+            const { data } = await api.getExpenses();
+            setExpenses(data);
+        } catch (err) { setError('No se pudieron cargar los gastos.'); }
+        finally { setLoading(prev => ({ ...prev, expenses: false })); }
+    }, [user]);
+
+    const addExpense = async (expenseData) => {
+        try {
+            const { data } = await api.addExpense(expenseData);
+            setExpenses(prev => [...prev, data]);
+        } catch (err) { setError('Error al añadir el gasto.'); }
+    };
+    const deleteExpense = async (id) => {
+        try {
+            await api.deleteExpense(id);
+            setExpenses(prev => prev.filter(e => e._id !== id));
+        } catch (err) { setError('Error al eliminar el gasto.'); }
+    };
+
+    // Efecto para cargar todos los datos cuando el usuario inicia sesión
+    useEffect(() => {
+        if (user) {
+            fetchTasks();
+            fetchShoppingItems();
+            fetchMeals();
+            fetchExpenses();
+        }
+    }, [user, fetchTasks, fetchShoppingItems, fetchMeals, fetchExpenses]);
+
     const value = {
-        tasks,
-        loading,
+        tasks, loadingTasks: loading.tasks, addTask, updateTask, deleteTask,
+        shoppingItems, loadingShopping: loading.shopping, addShoppingItem, updateShoppingItem, deleteShoppingItem,
+        meals, loadingMeals: loading.meals, addMealPlan, deleteMealPlan,
+        expenses, loadingExpenses: loading.expenses, addExpense, deleteExpense,
         error,
-        addTask,
-        updateTask,
-        deleteTask,
-        // Aquí se exportarían las otras funciones (addShoppingItem, etc.)
     };
 
     return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
