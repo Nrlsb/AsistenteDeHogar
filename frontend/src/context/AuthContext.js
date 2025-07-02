@@ -1,16 +1,30 @@
 import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
 import { registerUser, loginUser } from '../services/apiService';
 
-const AuthContext = createContext(null);
+// 1. Se crea un valor por defecto para el contexto.
+// Esto previene que la aplicación se rompa si un componente intenta
+// usar el contexto sin que un Provider esté disponible.
+const defaultAuthContext = {
+    user: null,
+    error: null,
+    loading: false,
+    isAuthReady: false, // Por defecto es 'false' para que la app muestre el loader
+    login: () => Promise.reject(new Error("AuthProvider no encontrado")),
+    register: () => Promise.reject(new Error("AuthProvider no encontrado")),
+    logout: () => { throw new Error("AuthProvider no encontrado"); },
+    clearError: () => {}
+};
+
+// 2. Se usa el valor por defecto al crear el contexto.
+const AuthContext = createContext(defaultAuthContext);
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [error, setError] = useState(null);
     const [loading, setLoading] = useState(false);
-    // NUEVO ESTADO: Rastrea si la verificación inicial de autenticación ha terminado.
     const [isAuthReady, setIsAuthReady] = useState(false);
 
-    // Este efecto se ejecuta solo una vez, cuando la aplicación se carga por primera vez.
+    // Este efecto se ejecuta solo una vez para verificar si hay un usuario en localStorage.
     useEffect(() => {
         try {
             const storedUser = localStorage.getItem('user');
@@ -21,12 +35,11 @@ export const AuthProvider = ({ children }) => {
             console.error("Fallo al leer usuario de localStorage", e);
             localStorage.removeItem('user');
         } finally {
-            // Marcamos la verificación inicial como completa, para que App.js pueda renderizar.
+            // Se marca la verificación como completa para que App.js pueda renderizar.
             setIsAuthReady(true);
         }
     }, []);
 
-    // Función genérica para manejar tanto el login como el registro
     const handleAuth = useCallback(async (authPromise) => {
         setError(null);
         setLoading(true);
@@ -59,7 +72,6 @@ export const AuthProvider = ({ children }) => {
         setUser(null);
     }, []);
 
-    // Exponemos el nuevo estado 'isAuthReady' en el valor del contexto
     const value = { user, error, loading, isAuthReady, login, register, logout, clearError: () => setError(null) };
 
     return (
@@ -69,10 +81,8 @@ export const AuthProvider = ({ children }) => {
     );
 };
 
+// 3. El hook ahora simplemente devuelve el contexto.
+// Ya no necesita una comprobación extra porque siempre habrá un valor por defecto.
 export const useAuth = () => {
-    const context = useContext(AuthContext);
-    if (context === undefined) {
-        throw new Error('useAuth debe ser usado dentro de un AuthProvider');
-    }
-    return context;
+    return useContext(AuthContext);
 };
