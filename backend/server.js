@@ -1,16 +1,16 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-// Importamos y configuramos dotenv al principio de todo
+// Carga las variables de entorno desde el archivo .env
 require('dotenv').config();
 
-// Ahora podemos usar las variables de entorno
-const connectDB = require('./config/db'); // Asumo que este archivo usa process.env.MONGO_URI
+// Importa la función de conexión a la base de datos
+const connectDB = require('./config/db');
+
+// Llama a la función para conectar a la base de datos
+connectDB();
 
 const app = express();
-
-// Conectar a la base de datos
-connectDB();
 
 // Middlewares
 app.use(cors());
@@ -25,18 +25,4 @@ app.use('/api/expenses', require('./routes/expenseRoutes'));
 
 const PORT = process.env.PORT || 5000;
 
-// Database Connection
-mongoose.connect(process.env.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-})
-.then(() => {
-    console.log('MongoDB Connected');
-    app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-})
-.catch(err => {
-    console.error('MongoDB connection error:', err)
-    // Si la conexión falla, el proceso se detendrá.
-    // Esto hará que Render muestre un error en los logs.
-    process.exit(1);
-});
+app.listen(PORT, () => console.log(`Servidor corriendo en el puerto ${PORT}`));
