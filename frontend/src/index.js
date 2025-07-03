@@ -1,15 +1,15 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { BrowserRouter as Router } from 'react-router-dom';
 import './index.css';
 import App from './App';
+import * as serviceWorkerRegistration from './serviceWorkerRegistration';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    {/* Al mover el Router aquí, nos aseguramos de que toda la app tenga acceso al contexto de enrutamiento */}
-    <Router>
-      <App />
-    </Router>
+    <App />
   </React.StrictMode>
 );
+
+// Activamos el registro del Service Worker
+serviceWorkerRegistration.register();
