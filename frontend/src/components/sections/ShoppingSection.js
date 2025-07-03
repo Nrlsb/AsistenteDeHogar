@@ -14,7 +14,8 @@ const ShoppingSection = () => {
     };
 
     return (
-        <div className="p-4 bg-white rounded-lg shadow">
+        // El div contenedor principal se ha movido a App.js para un layout consistente
+        <>
             <h2 className="text-2xl font-bold mb-4">Lista de Compras</h2>
             <form onSubmit={handleSubmit} className="flex mb-4">
                 <input
@@ -22,39 +23,36 @@ const ShoppingSection = () => {
                     value={newItem}
                     onChange={(e) => setNewItem(e.target.value)}
                     placeholder="Añadir nuevo artículo"
-                    className="flex-grow p-2 border rounded-l-md focus:outline-none"
+                    className="flex-grow p-2 border rounded-l-md focus:ring-blue-500 focus:border-blue-500"
                 />
-                <button type="submit" className="bg-green-500 text-white p-2 rounded-r-md hover:bg-green-600">
+                <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded-r-md hover:bg-blue-600">
                     + Añadir
                 </button>
             </form>
 
-            {loadingShopping && <p>Cargando artículos...</p>}
+            {loadingShopping && <p>Cargando lista de compras...</p>}
             {error && <p className="text-red-500">{error}</p>}
 
             <ul className="space-y-2">
                 {shoppingItems.length > 0 ? (
-                    shoppingItems.map((item) => (
-                        <li key={item._id} className="flex items-center justify-between p-2 border rounded-md">
-                            <span
+                    shoppingItems.map(item => (
+                        <li key={item._id} className="flex items-center justify-between p-2 bg-gray-50 rounded-md">
+                            <span 
                                 onClick={() => updateShoppingItem(item._id, { purchased: !item.purchased })}
                                 className={`cursor-pointer ${item.purchased ? 'line-through text-gray-500' : ''}`}
                             >
                                 {item.name}
                             </span>
-                            <button
-                                onClick={() => deleteShoppingItem(item._id)}
-                                className="text-red-500 hover:text-red-700"
-                            >
+                            <button onClick={() => deleteShoppingItem(item._id)} className="text-red-500 hover:text-red-700">
                                 Eliminar
                             </button>
                         </li>
                     ))
                 ) : (
-                    !loadingShopping && <p>No hay artículos en la lista.</p>
+                    !loadingShopping && <p>La lista de compras está vacía.</p>
                 )}
             </ul>
-        </div>
+        </>
     );
 };
 

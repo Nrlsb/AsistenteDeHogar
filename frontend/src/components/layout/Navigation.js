@@ -1,36 +1,39 @@
 import React from 'react';
+import { NavLink } from 'react-router-dom';
 
-// Array con la configuración de las pestañas para no repetir código
+// Definimos las pestañas como un array de objetos para que sea más fácil de mantener
 const TABS = [
-    { key: 'tasks', label: 'Tareas', icon: 'fas fa-tasks' },
-    { key: 'shopping', label: 'Compras', icon: 'fas fa-shopping-cart' },
-    { key: 'expenses', label: 'Gastos', icon: 'fas fa-wallet' },
-    { key: 'meals', label: 'Comidas', icon: 'fas fa-utensils' },
+    { path: '/tasks', label: 'Tareas', icon: '📝' },
+    { path: '/shopping', label: 'Compras', icon: '🛒' },
+    { path: '/expenses', label: 'Gastos', icon: '💸' },
+    { path: '/meals', label: 'Comidas', icon: '🍔' },
 ];
 
-export default function Navigation({ activeTab, setActiveTab }) {
-    // Estilos base para los botones de las pestañas
-    const baseTabStyle = "flex-1 text-center py-3 px-2 rounded-lg transition-all duration-300 ease-in-out flex items-center justify-center gap-2";
-    // Estilos para la pestaña activa
-    const activeTabStyle = "bg-indigo-600 text-white shadow-md";
-    // Estilos para las pestañas inactivas
-    const inactiveTabStyle = "bg-white text-gray-600 hover:bg-gray-200";
-
+const Navigation = () => {
     return (
-        <nav className="bg-gray-200 p-2 rounded-xl mb-6 md:mb-8">
-            <ul className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+        <nav className="bg-gray-100 p-2 sm:p-4 rounded-lg shadow-inner">
+            <ul className="flex flex-wrap space-x-2 sm:space-x-4">
                 {TABS.map(tab => (
-                    <li key={tab.key} className="flex-1">
-                        <button
-                            onClick={() => setActiveTab(tab.key)}
-                            className={`${baseTabStyle} ${activeTab === tab.key ? activeTabStyle : inactiveTabStyle}`}
+                    <li key={tab.path}>
+                        <NavLink
+                            to={tab.path}
+                            // className ahora es una función que nos da el estado 'isActive'
+                            className={({ isActive }) =>
+                                `flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${
+                                    isActive
+                                        ? 'bg-blue-600 text-white shadow-md' // Estilos para la pestaña activa
+                                        : 'text-gray-700 hover:bg-gray-200 hover:text-gray-900' // Estilos para pestañas inactivas
+                                }`
+                            }
                         >
-                            <i className={tab.icon}></i>
-                            <span className="font-medium">{tab.label}</span>
-                        </button>
+                            <span className="mr-2 hidden sm:inline">{tab.icon}</span>
+                            <span>{tab.label}</span>
+                        </NavLink>
                     </li>
                 ))}
             </ul>
         </nav>
     );
-}
+};
+
+export default Navigation;
