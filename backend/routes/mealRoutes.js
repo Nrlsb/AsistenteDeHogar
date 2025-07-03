@@ -1,20 +1,16 @@
 const express = require('express');
 const router = express.Router();
-// Importamos 'protect' directamente del middleware
+// Importamos la función 'protect' desde el middleware
 const { protect } = require('../middleware/authMiddleware');
 const MealPlan = require('../models/mealPlanModel');
 
-// Aplicamos el middleware 'protect' a todas las rutas de este archivo.
-// Cualquier solicitud a /api/meals requerirá un token válido.
-router.use(protect);
-
-// @desc    Obtener el plan de comidas del usuario (lo crea si no existe)
+// @desc    Obtener el plan de comidas del usuario
 // @route   GET /api/meals
-router.get('/', async (req, res) => {
+// Se añade 'protect' como middleware antes de la lógica de la ruta.
+router.get('/', protect, async (req, res) => {
     try {
         let mealPlan = await MealPlan.findOne({ user: req.user.id });
         if (!mealPlan) {
-            // Si el usuario no tiene un plan, se crea uno vacío con valores por defecto
             mealPlan = new MealPlan({ user: req.user.id });
             await mealPlan.save();
         }
@@ -27,13 +23,12 @@ router.get('/', async (req, res) => {
 
 // @desc    Actualizar el plan de comidas
 // @route   PUT /api/meals
-router.put('/', async (req, res) => {
+// Se añade 'protect' como middleware antes de la lógica de la ruta.
+router.put('/', protect, async (req, res) => {
     try {
-        // Busca el plan del usuario y lo actualiza con los datos del body.
-        // La opción { new: true, upsert: true } devuelve el documento actualizado y lo crea si no existe.
         const updatedPlan = await MealPlan.findOneAndUpdate(
             { user: req.user.id },
-            { $set: req.body }, // Usamos $set para actualizar solo los campos enviados
+            { $set: req.body },
             { new: true, upsert: true, setDefaultsOnInsert: true }
         );
         res.json(updatedPlan);
