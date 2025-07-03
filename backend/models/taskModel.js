@@ -1,19 +1,24 @@
 const mongoose = require('mongoose');
 
-const taskSchema = new mongoose.Schema({
+const taskSchema = mongoose.Schema({
     user: {
         type: mongoose.Schema.Types.ObjectId,
         required: true,
         ref: 'User'
     },
-    // Corregido: Se cambia 'text' por 'description' para que coincida con el frontend y las rutas.
     description: {
         type: String,
-        required: true
+        required: [true, 'Por favor, añade una descripción']
     },
     completed: {
         type: Boolean,
+        required: true,
         default: false
+    },
+    // Nuevo campo para la fecha de vencimiento
+    dueDate: {
+        type: Date,
+        required: false // Es opcional
     }
 }, {
     timestamps: true
