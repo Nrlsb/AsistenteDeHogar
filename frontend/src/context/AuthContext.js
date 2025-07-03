@@ -1,5 +1,4 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import axios from 'axios';
 import * as api from '../services/apiService';
 
 // Objeto con el estado por defecto para el contexto de autenticación.
@@ -25,7 +24,7 @@ export const AuthProvider = ({ children }) => {
     useEffect(() => {
         const verifyUser = async () => {
             if (token) {
-                api.setAuthToken(token);
+                // La función setAuthToken no es necesaria gracias al interceptor de Axios
                 try {
                     const { data } = await api.getMe();
                     setUser(data);
@@ -34,7 +33,6 @@ export const AuthProvider = ({ children }) => {
                     localStorage.removeItem('token');
                     setToken(null);
                     setUser(null);
-                    api.setAuthToken(null);
                 }
             }
             setLoading(false);
@@ -72,7 +70,7 @@ export const AuthProvider = ({ children }) => {
         localStorage.removeItem('token');
         setToken(null);
         setUser(null);
-        api.setAuthToken(null);
+        // La función setAuthToken no es necesaria aquí tampoco.
     };
 
     const value = { user, token, login, register, logout, loading, error };
