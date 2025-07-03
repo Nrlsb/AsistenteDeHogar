@@ -12,8 +12,14 @@ const protect = async (req, res, next) => {
             // Verificar el token
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-            // Obtener el usuario del token y adjuntarlo a la solicitud
+            // Obtener el usuario del token
             req.user = await User.findById(decoded.id).select('-password');
+
+            // --- ¡LA CORRECCIÓN CLAVE! ---
+            // Si después de buscar, el usuario no existe, denegamos el acceso.
+            if (!req.user) {
+                return res.status(401).json({ message: 'No autorizado, usuario no encontrado' });
+            }
 
             next(); // Continuar al siguiente middleware o ruta
         } catch (error) {
@@ -27,5 +33,4 @@ const protect = async (req, res, next) => {
     }
 };
 
-// Se corrige la forma de exportar para que coincida con la importación en las rutas.
 module.exports = { protect };
