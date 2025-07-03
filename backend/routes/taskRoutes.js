@@ -10,7 +10,7 @@ router.get('/', protect, async (req, res) => {
         const tasks = await Task.find({ user: req.user.id });
         res.json(tasks);
     } catch (err) {
-        console.error(err.message);
+        console.error('ERROR AL OBTENER TAREAS:', err);
         res.status(500).send('Error del Servidor');
     }
 });
@@ -27,8 +27,9 @@ router.post('/', protect, async (req, res) => {
         const task = await newTask.save();
         res.json(task);
     } catch (err) {
-        console.error(err.message);
-        res.status(500).send('Error del Servidor');
+        // Log del error completo para depuración en Render
+        console.error('ERROR AL CREAR TAREA:', err);
+        res.status(500).send('Error del Servidor al crear la tarea');
     }
 });
 
@@ -44,7 +45,7 @@ router.put('/:id', protect, async (req, res) => {
         task = await Task.findByIdAndUpdate(req.params.id, { $set: req.body }, { new: true });
         res.json(task);
     } catch (err) {
-        console.error(err.message);
+        console.error('ERROR AL ACTUALIZAR TAREA:', err);
         res.status(500).send('Error del Servidor');
     }
 });
@@ -61,7 +62,7 @@ router.delete('/:id', protect, async (req, res) => {
         await Task.findByIdAndDelete(req.params.id);
         res.json({ msg: 'Tarea eliminada' });
     } catch (err) {
-        console.error(err.message);
+        console.error('ERROR AL ELIMINAR TAREA:', err);
         res.status(500).send('Error del Servidor');
     }
 });
