@@ -1,28 +1,31 @@
 const jwt = require('jsonwebtoken');
+const User = require('../models/userModel');
 
-const authMiddleware = (req, res, next) => {
+const protect = async (req, res, next) => {
     let token;
-    
+
     if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
         try {
-            // Obtener el token de la cabecera "Bearer <token>"
+            // Obtener el token del encabezado
             token = req.headers.authorization.split(' ')[1];
 
             // Verificar el token
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-            // Añadir el id del usuario al objeto request para usarlo en las rutas protegidas
-            req.user = { id: decoded.user.id };
-            next();
+            // Obtener el usuario del token y adjuntarlo a la solicitud
+            req.user = await User.findById(decoded.id).select('-password');
+
+            next(); // Continuar al siguiente middleware o ruta
         } catch (error) {
-            console.error('Error de autenticación:', error);
-            res.status(401).json({ message: 'No autorizado, el token falló' });
+            console.error(error);
+            res.status(401).json({ message: 'No autorizado, token inválido' });
         }
     }
 
     if (!token) {
-        res.status(401).json({ message: 'No autorizado, no se encontró un token' });
+        res.status(401).json({ message: 'No autorizado, no se encontró token' });
     }
 };
 
-module.exports = authMiddleware;
+// Se corrige la forma de exportar para que coincida con la importación en las rutas.
+module.exports = { protect };
