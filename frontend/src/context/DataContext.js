@@ -1,10 +1,7 @@
 import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
-import * as api from '../services/apiService'; // Importamos todas las funciones de la API
+import * as api from '../services/apiService';
 import { useAuth } from './AuthContext';
 
-// 1. Se crea un valor por defecto para el contexto.
-// Esto previene que la aplicación se rompa si un componente intenta
-// usar el contexto sin que un Provider esté disponible.
 const defaultDataContext = {
     tasks: [],
     loadingTasks: false,
@@ -16,10 +13,9 @@ const defaultDataContext = {
     addShoppingItem: () => {},
     updateShoppingItem: () => {},
     deleteShoppingItem: () => {},
-    meals: [],
+    mealPlan: null, // Cambiado de `meals` a `mealPlan`
     loadingMeals: false,
-    addMealPlan: () => {},
-    deleteMealPlan: () => {},
+    updateSingleMeal: () => {}, // Nueva función para actualizar una comida
     expenses: [],
     loadingExpenses: false,
     addExpense: () => {},
@@ -27,16 +23,14 @@ const defaultDataContext = {
     error: null,
 };
 
-// 2. Se usa el valor por defecto al crear el contexto.
 const DataContext = createContext(defaultDataContext);
 
 export const DataProvider = ({ children }) => {
     const { user } = useAuth();
 
-    // Estados para cada tipo de dato
     const [tasks, setTasks] = useState([]);
     const [shoppingItems, setShoppingItems] = useState([]);
-    const [meals, setMeals] = useState([]);
+    const [mealPlan, setMealPlan] = useState(null); // Estado para el plan de comidas
     const [expenses, setExpenses] = useState([]);
 
     const [loading, setLoading] = useState({ tasks: false, shopping: false, meals: false, expenses: false });
@@ -102,28 +96,37 @@ export const DataProvider = ({ children }) => {
         } catch (err) { setError('Error al eliminar el artículo.'); }
     };
 
-    // --- Lógica de Comidas ---
-     const fetchMeals = useCallback(async () => {
+    // --- Lógica de Comidas (CORREGIDA) ---
+    const fetchMealPlan = useCallback(async () => {
         if (!user) return;
         setLoading(prev => ({ ...prev, meals: true }));
         try {
-            const { data } = await api.getMealPlans();
-            setMeals(data);
-        } catch (err) { setError('No se pudieron cargar los planes de comida.'); }
+            const { data } = await api.getMealPlan();
+            setMealPlan(data);
+        } catch (err) { 
+            setError('No se pudo cargar el plan de comidas.');
+            console.error(err);
+        }
         finally { setLoading(prev => ({ ...prev, meals: false })); }
     }, [user]);
 
-    const addMealPlan = async (mealData) => {
+    const updateSingleMeal = async (day, mealType, value) => {
+        if (!mealPlan) return;
+        
+        // Creamos una nueva copia del plan para no mutar el estado directamente
+        const newMealPlan = { ...mealPlan, [day]: { ...mealPlan[day], [mealType]: value }};
+
         try {
-            const { data } = await api.addMealPlan(mealData);
-            setMeals(prev => [...prev, data]);
-        } catch (err) { setError('Error al añadir el plan de comida.'); }
-    };
-    const deleteMealPlan = async (id) => {
-        try {
-            await api.deleteMealPlan(id);
-            setMeals(prev => prev.filter(m => m._id !== id));
-        } catch (err) { setError('Error al eliminar el plan de comida.'); }
+            // Actualizamos el estado local inmediatamente para una UI más rápida
+            setMealPlan(newMealPlan); 
+            // Enviamos la actualización completa al backend
+            await api.updateMealPlan(newMealPlan);
+        } catch (err) {
+            setError('Error al actualizar la comida.');
+            console.error(err);
+            // Si falla, podríamos revertir al estado anterior
+            fetchMealPlan();
+        }
     };
 
     // --- Lógica de Gastos ---
@@ -140,7 +143,7 @@ export const DataProvider = ({ children }) => {
     const addExpense = async (expenseData) => {
         try {
             const { data } = await api.addExpense(expenseData);
-            setExpenses(prev => [...prev, data]);
+            setExpenses(prev => [...prev, data].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
         } catch (err) { setError('Error al añadir el gasto.'); }
     };
     const deleteExpense = async (id) => {
@@ -155,15 +158,15 @@ export const DataProvider = ({ children }) => {
         if (user) {
             fetchTasks();
             fetchShoppingItems();
-            fetchMeals();
+            fetchMealPlan();
             fetchExpenses();
         }
-    }, [user, fetchTasks, fetchShoppingItems, fetchMeals, fetchExpenses]);
+    }, [user, fetchTasks, fetchShoppingItems, fetchMealPlan, fetchExpenses]);
 
     const value = {
         tasks, loadingTasks: loading.tasks, addTask, updateTask, deleteTask,
         shoppingItems, loadingShopping: loading.shopping, addShoppingItem, updateShoppingItem, deleteShoppingItem,
-        meals, loadingMeals: loading.meals, addMealPlan, deleteMealPlan,
+        mealPlan, loadingMeals: loading.meals, updateSingleMeal,
         expenses, loadingExpenses: loading.expenses, addExpense, deleteExpense,
         error,
     };
@@ -171,8 +174,6 @@ export const DataProvider = ({ children }) => {
     return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
 };
 
-// 3. El hook ahora simplemente devuelve el contexto.
-// Ya no necesita una comprobación extra porque siempre habrá un valor por defecto.
 export const useData = () => {
     return useContext(DataContext);
 };

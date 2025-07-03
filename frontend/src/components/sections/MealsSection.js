@@ -1,58 +1,98 @@
 import React, { useState } from 'react';
 import { useData } from '../../context/DataContext';
 
-const MealsSection = () => {
-    const { meals, addMealPlan, deleteMealPlan, loadingMeals, error } = useData();
-    const [day, setDay] = useState('Lunes');
-    const [meal, setMeal] = useState('');
+const DAYS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+const MEAL_TYPES = ['Desayuno', 'Almuerzo', 'Cena'];
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        if (meal.trim()) {
-            addMealPlan({ day, meal });
-            setMeal('');
+// Componente interno para manejar la edición de cada celda de comida
+const MealInput = ({ day, mealType, value, onSave }) => {
+    const [text, setText] = useState(value || '');
+    const [isEditing, setIsEditing] = useState(false);
+
+    const handleSave = () => {
+        // Solo guardar si el texto ha cambiado
+        if (text !== (value || '')) {
+            onSave(day, mealType, text);
+        }
+        setIsEditing(false);
+    };
+    
+    // Manejar Enter y Escape para una mejor experiencia de usuario
+    const handleKeyDown = (e) => {
+        if (e.key === 'Enter') {
+            handleSave();
+        } else if (e.key === 'Escape') {
+            setText(value || ''); // Revertir cambios
+            setIsEditing(false);
         }
     };
 
+    if (isEditing) {
+        return (
+            <input
+                type="text"
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                onBlur={handleSave} // Guardar cuando el input pierde el foco
+                onKeyDown={handleKeyDown}
+                className="w-full p-2 border rounded-md bg-white shadow-sm"
+                autoFocus // Poner el foco automáticamente al hacer clic
+            />
+        );
+    }
+
+    return (
+        <div 
+            onClick={() => setIsEditing(true)} 
+            className="w-full h-full p-2 cursor-pointer hover:bg-gray-100 rounded-md min-h-[40px] flex items-center justify-start"
+        >
+            {value || <span className="text-gray-400 italic text-sm">Añadir comida...</span>}
+        </div>
+    );
+};
+
+// Componente principal de la sección de comidas
+const MealsSection = () => {
+    const { mealPlan, updateSingleMeal, loadingMeals, error } = useData();
+
     return (
         <div className="p-4 bg-white rounded-lg shadow">
-            <h2 className="text-2xl font-bold mb-4">Plan de Comidas</h2>
-            <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                <select value={day} onChange={(e) => setDay(e.target.value)} className="p-2 border rounded-md">
-                    {['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'].map(d => (
-                        <option key={d} value={d}>{d}</option>
-                    ))}
-                </select>
-                <input
-                    type="text"
-                    value={meal}
-                    onChange={(e) => setMeal(e.target.value)}
-                    placeholder="¿Qué vas a comer?"
-                    className="md:col-span-2 p-2 border rounded-md"
-                />
-                <button type="submit" className="md:col-span-3 bg-yellow-500 text-white p-2 rounded-md hover:bg-yellow-600">
-                    Añadir al Plan
-                </button>
-            </form>
-
+            <h2 className="text-2xl font-bold mb-4">Plan de Comidas Semanal</h2>
+            
             {loadingMeals && <p>Cargando plan de comidas...</p>}
             {error && <p className="text-red-500">{error}</p>}
 
-            <div className="space-y-4">
-                {meals.length > 0 ? (
-                    meals.map(plan => (
-                        <div key={plan._id} className="p-2 border rounded-md">
-                            <h3 className="font-bold">{plan.day}</h3>
-                            <div className="flex justify-between items-center">
-                                <p>{plan.meal}</p>
-                                <button onClick={() => deleteMealPlan(plan._id)} className="text-red-500 text-sm">Eliminar</button>
-                            </div>
-                        </div>
-                    ))
-                ) : (
-                    !loadingMeals && <p>No hay comidas planificadas.</p>
-                )}
-            </div>
+            {!loadingMeals && mealPlan && (
+                 <div className="overflow-x-auto">
+                    <table className="min-w-full border-collapse border border-gray-300">
+                        <thead className="bg-gray-100">
+                            <tr>
+                                <th className="border border-gray-300 p-2 font-semibold text-left">Día</th>
+                                {MEAL_TYPES.map(type => (
+                                    <th key={type} className="border border-gray-300 p-2 font-semibold text-left">{type}</th>
+                                ))}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {DAYS.map(day => (
+                                <tr key={day} className="even:bg-gray-50">
+                                    <td className="border border-gray-300 p-2 font-medium">{day}</td>
+                                    {MEAL_TYPES.map(mealType => (
+                                        <td key={`${day}-${mealType}`} className="border border-gray-300 p-1 align-top">
+                                            <MealInput 
+                                                day={day}
+                                                mealType={mealType}
+                                                value={mealPlan[day]?.[mealType]}
+                                                onSave={updateSingleMeal}
+                                            />
+                                        </td>
+                                    ))}
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
         </div>
     );
 };

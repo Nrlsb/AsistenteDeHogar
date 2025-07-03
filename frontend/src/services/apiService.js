@@ -1,8 +1,6 @@
 import axios from 'axios';
 
 // La URL de la API ahora apunta a una ruta relativa.
-// Netlify usará la regla del proxy en `netlify.toml` para redirigir
-// estas llamadas a tu backend en Render.
 const API_URL = '/api';
 
 const api = axios.create({
@@ -48,12 +46,6 @@ export const getExpenses = () => api.get('/expenses');
 export const addExpense = (expenseData) => api.post('/expenses', expenseData);
 export const deleteExpense = (id) => api.delete(`/expenses/${id}`);
 
-// --- Servicios de Comidas ---
-export const getMealPlans = () => api.get('/meals');
-export const addMealPlan = (mealData) => api.post('/meals', mealData);
-export const updateMealPlan = (id, mealData) => api.put(`/meals/${id}`, mealData);
-export const deleteMealPlan = (id) => api.delete(`/meals/${id}`);
-
-// NOTA: Se eliminó el 'export default api' para usar solo exportaciones nombradas,
-// lo que previene los errores de "is not a function".
-
+// --- Servicios de Comidas (CORREGIDO) ---
+export const getMealPlan = () => api.get('/meals');
+export const updateMealPlan = (mealPlanData) => api.put('/meals', mealPlanData);
