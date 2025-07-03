@@ -1,76 +1,83 @@
-import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { createContext, useState, useContext, useEffect } from 'react';
+import axios from 'axios';
 import * as api from '../services/apiService';
 
-const AuthContext = createContext();
+// Objeto con el estado por defecto para el contexto de autenticación.
+// Esto previene que la aplicación se rompa.
+const defaultAuthContext = {
+    user: null,
+    token: null,
+    login: async () => {},
+    register: async () => {},
+    logout: () => {},
+    loading: true,
+    error: null,
+};
+
+const AuthContext = createContext(defaultAuthContext);
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
-    const [loading, setLoading] = useState(true); // Para la carga inicial de la página
-    const [authLoading, setAuthLoading] = useState(false); // Para las acciones de login/registro
+    const [token, setToken] = useState(localStorage.getItem('token'));
+    const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const navigate = useNavigate();
-
-    // Usamos useCallback para evitar que navigate cause re-renders innecesarios
-    const memoizedNavigate = useCallback(navigate, []);
 
     useEffect(() => {
-        const userStr = localStorage.getItem('user');
-        if (userStr) {
-            try {
-                const parsedUser = JSON.parse(userStr);
-                setUser(parsedUser);
-            } catch (e) {
-                console.error("Fallo al parsear el usuario desde localStorage", e);
-                localStorage.removeItem('user');
+        const verifyUser = async () => {
+            if (token) {
+                api.setAuthToken(token);
+                try {
+                    const { data } = await api.getMe();
+                    setUser(data);
+                } catch (err) {
+                    console.error("Error de autenticación, token inválido.");
+                    localStorage.removeItem('token');
+                    setToken(null);
+                    setUser(null);
+                    api.setAuthToken(null);
+                }
             }
-        }
-        setLoading(false);
-    }, []);
+            setLoading(false);
+        };
+        verifyUser();
+    }, [token]);
 
     const login = async (userData) => {
-        setAuthLoading(true);
-        setError(null);
         try {
-            const { data } = await api.loginUser(userData);
-            localStorage.setItem('user', JSON.stringify(data));
+            const { data } = await api.login(userData);
+            localStorage.setItem('token', data.token);
+            setToken(data.token);
             setUser(data);
-            memoizedNavigate('/tasks');
+            setError(null);
         } catch (err) {
-            console.error("Fallo el inicio de sesión:", err); // Registramos el error completo en consola
-            setError(err.response?.data?.message || 'Error al iniciar sesión. Verifique sus credenciales.');
-        } finally {
-            setAuthLoading(false);
+            setError(err.response?.data?.message || 'Error al iniciar sesión');
+            throw err;
         }
     };
 
     const register = async (userData) => {
-        setAuthLoading(true);
-        setError(null);
         try {
-            const { data } = await api.registerUser(userData);
-            localStorage.setItem('user', JSON.stringify(data));
+            const { data } = await api.register(userData);
+            localStorage.setItem('token', data.token);
+            setToken(data.token);
             setUser(data);
-            memoizedNavigate('/tasks');
+            setError(null);
         } catch (err) {
-            console.error("Fallo el registro:", err); // Registramos el error completo en consola
-            setError(err.response?.data?.message || 'Error al registrarse. Intente de nuevo.');
-        } finally {
-            setAuthLoading(false);
+            setError(err.response?.data?.message || 'Error al registrarse');
+            throw err;
         }
     };
 
     const logout = () => {
-        localStorage.removeItem('user');
+        localStorage.removeItem('token');
+        setToken(null);
         setUser(null);
-        memoizedNavigate('/auth');
+        api.setAuthToken(null);
     };
 
-    return (
-        <AuthContext.Provider value={{ user, loading, authLoading, error, login, register, logout, setError }}>
-            {children}
-        </AuthContext.Provider>
-    );
+    const value = { user, token, login, register, logout, loading, error };
+
+    return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = () => {
