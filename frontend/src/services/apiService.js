@@ -1,51 +1,51 @@
 import axios from 'axios';
 
-// La URL de la API ahora apunta a una ruta relativa.
-const API_URL = '/api';
-
-const api = axios.create({
-    baseURL: API_URL,
+// Creamos una instancia de Axios. Si la app estuviera en producción,
+// la URL base sería la del backend desplegado. Gracias al proxy de Netlify,
+// podemos simplemente usar una ruta relativa.
+const API = axios.create({
+    baseURL: '/api' 
 });
 
-// Interceptor para añadir el token de autenticación a cada solicitud.
-api.interceptors.request.use(config => {
-    const userStr = localStorage.getItem('user');
-    if (userStr) {
-        try {
-            const { token } = JSON.parse(userStr);
-            if (token) {
-                config.headers.Authorization = `Bearer ${token}`;
-            }
-        } catch (error) {
-            console.error("Error al parsear el usuario desde localStorage", error);
-        }
+// Interceptor de Axios: se ejecuta en cada petición.
+// Su trabajo es tomar el token de localStorage y añadirlo a las cabeceras
+// de autorización si existe. Esto automatiza el envío del token.
+API.interceptors.request.use((req) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+        req.headers.Authorization = `Bearer ${token}`;
     }
-    return config;
-}, error => {
-    return Promise.reject(error);
+    return req;
 });
 
-// --- Servicios de Autenticación ---
-export const registerUser = (userData) => api.post('/auth/register', userData);
-export const loginUser = (userData) => api.post('/auth/login', userData);
 
-// --- Servicios de Tareas ---
-export const getTasks = () => api.get('/tasks');
-export const addTask = (taskData) => api.post('/tasks', taskData);
-export const updateTask = (id, taskData) => api.put(`/tasks/${id}`, taskData);
-export const deleteTask = (id) => api.delete(`/tasks/${id}`);
+// --- Endpoints de Autenticación ---
+export const login = (userData) => API.post('/auth/login', userData);
+export const register = (userData) => API.post('/auth/register', userData);
+// ¡FUNCIÓN AÑADIDA! Esta es la que faltaba.
+export const getMe = () => API.get('/auth/me');
 
-// --- Servicios de Compras ---
-export const getShoppingItems = () => api.get('/shopping');
-export const addShoppingItem = (itemData) => api.post('/shopping', itemData);
-export const updateShoppingItem = (id, itemData) => api.put(`/shopping/${id}`, itemData);
-export const deleteShoppingItem = (id) => api.delete(`/shopping/${id}`);
 
-// --- Servicios de Gastos ---
-export const getExpenses = () => api.get('/expenses');
-export const addExpense = (expenseData) => api.post('/expenses', expenseData);
-export const deleteExpense = (id) => api.delete(`/expenses/${id}`);
+// --- Endpoints de Tareas ---
+export const getTasks = () => API.get('/tasks');
+export const addTask = (taskData) => API.post('/tasks', taskData);
+export const updateTask = (id, taskData) => API.put(`/tasks/${id}`, taskData);
+export const deleteTask = (id) => API.delete(`/tasks/${id}`);
 
-// --- Servicios de Comidas (CORREGIDO) ---
-export const getMealPlan = () => api.get('/meals');
-export const updateMealPlan = (mealPlanData) => api.put('/meals', mealPlanData);
+
+// --- Endpoints de la Lista de Compras ---
+export const getShoppingItems = () => API.get('/shopping');
+export const addShoppingItem = (itemData) => API.post('/shopping', itemData);
+export const updateShoppingItem = (id, itemData) => API.put(`/shopping/${id}`, itemData);
+export const deleteShoppingItem = (id) => API.delete(`/shopping/${id}`);
+
+
+// --- Endpoints del Plan de Comidas ---
+export const getMealPlan = () => API.get('/meals');
+export const updateMealPlan = (planData) => API.put('/meals', planData);
+
+
+// --- Endpoints de Gastos ---
+export const getExpenses = () => API.get('/expenses');
+export const addExpense = (expenseData) => API.post('/expenses', expenseData);
+export const deleteExpense = (id) => API.delete(`/expenses/${id}`);
