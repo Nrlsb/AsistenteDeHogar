@@ -2,7 +2,6 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
-import * as serviceWorker from './serviceWorker'; // Cambiamos la importación a la oficial
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
@@ -11,5 +10,5 @@ root.render(
   </React.StrictMode>
 );
 
-// Usamos el método de registro oficial de create-react-app
-serviceWorker.register();
+// No hay ninguna llamada a serviceWorker.register() aquí.
+// Lo manejaremos directamente en el HTML.
