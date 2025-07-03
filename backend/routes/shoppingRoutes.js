@@ -1,109 +1,69 @@
 const express = require('express');
 const router = express.Router();
-const authMiddleware = require('../middleware/authMiddleware');
-const { ShoppingCategory, ShoppingItem } = require('../models/shoppingModels');
+const { protect } = require('../middleware/authMiddleware');
+const ShoppingItem = require('../models/shoppingModels');
 
-// Aplicamos el middleware a todas las rutas de este archivo
-router.use(authMiddleware);
-
-// --- RUTAS DE CATEGORÍAS ---
-
-// @desc    Obtener todas las categorías de compras del usuario
-// @route   GET /api/shopping/categories
-router.get('/categories', async (req, res) => {
-    try {
-        const categories = await ShoppingCategory.find({ user: req.user.id }).sort({ createdAt: 'asc' });
-        res.json(categories);
-    } catch (error) {
-        res.status(500).send('Error del servidor');
-    }
-});
-
-// @desc    Crear una nueva categoría de compras
-// @route   POST /api/shopping/categories
-router.post('/categories', async (req, res) => {
-    const { name } = req.body;
-    if (!name) return res.status(400).json({ message: 'El nombre es obligatorio' });
-    try {
-        const category = new ShoppingCategory({ name, user: req.user.id });
-        await category.save();
-        res.status(201).json(category);
-    } catch (error) {
-        res.status(500).send('Error del servidor');
-    }
-});
-
-// @desc    Eliminar una categoría y todos sus items
-// @route   DELETE /api/shopping/categories/:id
-router.delete('/categories/:id', async (req, res) => {
-    try {
-        const category = await ShoppingCategory.findOne({ _id: req.params.id, user: req.user.id });
-        if (!category) return res.status(404).json({ message: 'Categoría no encontrada' });
-
-        // Eliminar todos los items asociados a esta categoría
-        await ShoppingItem.deleteMany({ category: req.params.id, user: req.user.id });
-        // Eliminar la categoría
-        await category.deleteOne();
-        
-        res.json({ message: 'Categoría y sus productos eliminados' });
-    } catch (error) {
-        res.status(500).send('Error del servidor');
-    }
-});
-
-
-// --- RUTAS DE PRODUCTOS ---
-
-// @desc    Obtener todos los productos de compras del usuario
-// @route   GET /api/shopping/items
-router.get('/items', async (req, res) => {
+// @route   GET /api/shopping
+// @desc    Obtener todos los artículos de compra
+router.get('/', protect, async (req, res) => {
     try {
         const items = await ShoppingItem.find({ user: req.user.id });
         res.json(items);
-    } catch (error) {
-        res.status(500).send('Error del servidor');
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Error del Servidor');
     }
 });
 
-// @desc    Crear un nuevo producto de compra
-// @route   POST /api/shopping/items
-router.post('/items', async (req, res) => {
-    const { name, categoryId } = req.body;
-    if (!name || !categoryId) return res.status(400).json({ message: 'Nombre y categoría son obligatorios' });
+// @route   POST /api/shopping
+// @desc    Añadir un nuevo artículo
+router.post('/', protect, async (req, res) => {
+    const { name } = req.body;
     try {
-        const item = new ShoppingItem({ name, category: categoryId, user: req.user.id });
-        await item.save();
-        res.status(201).json(item);
-    } catch (error) {
-        res.status(500).send('Error del servidor');
-    }
-});
-
-// @desc    Actualizar un producto (marcar/desmarcar como comprado)
-// @route   PUT /api/shopping/items/:id
-router.put('/items/:id', async (req, res) => {
-    try {
-        const item = await ShoppingItem.findOne({ _id: req.params.id, user: req.user.id });
-        if (!item) return res.status(404).json({ message: 'Producto no encontrado' });
-
-        item.purchased = !item.purchased;
-        await item.save();
+        const newItem = new ShoppingItem({
+            user: req.user.id,
+            name
+        });
+        const item = await newItem.save();
         res.json(item);
-    } catch (error) {
-        res.status(500).send('Error del servidor');
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Error del Servidor');
     }
 });
 
-// @desc    Eliminar todos los productos comprados
-// @route   DELETE /api/shopping/items/purchased
-router.delete('/items/purchased', async (req, res) => {
+// @route   PUT /api/shopping/:id
+// @desc    Actualizar un artículo
+router.put('/:id', protect, async (req, res) => {
     try {
-        await ShoppingItem.deleteMany({ user: req.user.id, purchased: true });
-        res.json({ message: 'Productos comprados eliminados' });
-    } catch (error) {
-        res.status(500).send('Error del servidor');
+        let item = await ShoppingItem.findById(req.params.id);
+        if (!item) return res.status(404).json({ msg: 'Artículo no encontrado' });
+        if (item.user.toString() !== req.user.id) {
+            return res.status(401).json({ msg: 'No autorizado' });
+        }
+        item = await ShoppingItem.findByIdAndUpdate(req.params.id, { $set: req.body }, { new: true });
+        res.json(item);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Error del Servidor');
     }
 });
 
+// @route   DELETE /api/shopping/:id
+// @desc    Eliminar un artículo
+router.delete('/:id', protect, async (req, res) => {
+    try {
+        let item = await ShoppingItem.findById(req.params.id);
+        if (!item) return res.status(404).json({ msg: 'Artículo no encontrado' });
+        if (item.user.toString() !== req.user.id) {
+            return res.status(401).json({ msg: 'No autorizado' });
+        }
+        await ShoppingItem.findByIdAndDelete(req.params.id);
+        res.json({ msg: 'Artículo eliminado' });
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Error del Servidor');
+    }
+});
 
 module.exports = router;

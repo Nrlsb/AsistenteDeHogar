@@ -1,50 +1,52 @@
 const express = require('express');
 const router = express.Router();
-const authMiddleware = require('../middleware/authMiddleware');
+const { protect } = require('../middleware/authMiddleware');
 const Expense = require('../models/expenseModel');
 
-// Aplicamos el middleware a todas las rutas
-router.use(authMiddleware);
-
-// @desc    Obtener todos los gastos del usuario
 // @route   GET /api/expenses
-router.get('/', async (req, res) => {
+// @desc    Obtener todos los gastos
+router.get('/', protect, async (req, res) => {
     try {
         const expenses = await Expense.find({ user: req.user.id }).sort({ createdAt: -1 });
         res.json(expenses);
-    } catch (error) {
-        res.status(500).send('Error del servidor');
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Error del Servidor');
     }
 });
 
-// @desc    Crear un nuevo gasto
 // @route   POST /api/expenses
-router.post('/', async (req, res) => {
+// @desc    Añadir un nuevo gasto
+router.post('/', protect, async (req, res) => {
     const { description, amount } = req.body;
-    if (!description || !amount) {
-        return res.status(400).json({ message: 'Descripción y monto son obligatorios' });
-    }
     try {
-        const expense = new Expense({ description, amount: parseFloat(amount), user: req.user.id });
-        await expense.save();
-        res.status(201).json(expense);
-    } catch (error) {
-        res.status(500).send('Error del servidor');
+        const newExpense = new Expense({
+            user: req.user.id,
+            description,
+            amount
+        });
+        const expense = await newExpense.save();
+        res.json(expense);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Error del Servidor');
     }
 });
 
-// @desc    Eliminar un gasto
 // @route   DELETE /api/expenses/:id
-router.delete('/:id', async (req, res) => {
+// @desc    Eliminar un gasto
+router.delete('/:id', protect, async (req, res) => {
     try {
-        const expense = await Expense.findOne({ _id: req.params.id, user: req.user.id });
-        if (!expense) {
-            return res.status(404).json({ message: 'Gasto no encontrado' });
+        let expense = await Expense.findById(req.params.id);
+        if (!expense) return res.status(404).json({ msg: 'Gasto no encontrado' });
+        if (expense.user.toString() !== req.user.id) {
+            return res.status(401).json({ msg: 'No autorizado' });
         }
-        await expense.deleteOne();
-        res.json({ message: 'Gasto eliminado' });
-    } catch (error) {
-        res.status(500).send('Error del servidor');
+        await Expense.findByIdAndDelete(req.params.id);
+        res.json({ msg: 'Gasto eliminado' });
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Error del Servidor');
     }
 });
 

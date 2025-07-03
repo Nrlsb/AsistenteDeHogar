@@ -1,73 +1,69 @@
 const express = require('express');
 const router = express.Router();
-const authMiddleware = require('../middleware/authMiddleware');
+const { protect } = require('../middleware/authMiddleware');
 const Task = require('../models/taskModel');
 
-// Aplicamos el middleware a todas las rutas de este archivo
-router.use(authMiddleware);
-
-// @desc    Obtener todas las tareas del usuario
 // @route   GET /api/tasks
-router.get('/', async (req, res) => {
+// @desc    Obtener todas las tareas del usuario
+router.get('/', protect, async (req, res) => {
     try {
-        const tasks = await Task.find({ user: req.user.id }).sort({ createdAt: -1 });
+        const tasks = await Task.find({ user: req.user.id });
         res.json(tasks);
-    } catch (error) {
-        res.status(500).send('Error del servidor');
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Error del Servidor');
     }
 });
 
-// @desc    Crear una nueva tarea
 // @route   POST /api/tasks
-router.post('/', async (req, res) => {
-    const { text } = req.body;
-    if (!text) {
-        return res.status(400).json({ message: 'El texto de la tarea es obligatorio' });
-    }
+// @desc    Añadir una nueva tarea
+router.post('/', protect, async (req, res) => {
+    const { description } = req.body;
     try {
-        const newTask = new Task({ text, user: req.user.id });
+        const newTask = new Task({
+            user: req.user.id,
+            description
+        });
         const task = await newTask.save();
-        res.status(201).json(task);
-    } catch (error) {
-        res.status(500).send('Error del servidor');
+        res.json(task);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Error del Servidor');
     }
 });
 
-// @desc    Actualizar una tarea (marcar como completada/incompleta)
 // @route   PUT /api/tasks/:id
-router.put('/:id', async (req, res) => {
+// @desc    Actualizar una tarea
+router.put('/:id', protect, async (req, res) => {
     try {
-        const task = await Task.findOne({ _id: req.params.id, user: req.user.id });
-
-        if (!task) {
-            return res.status(404).json({ message: 'Tarea no encontrada' });
+        let task = await Task.findById(req.params.id);
+        if (!task) return res.status(404).json({ msg: 'Tarea no encontrada' });
+        if (task.user.toString() !== req.user.id) {
+            return res.status(401).json({ msg: 'No autorizado' });
         }
-
-        task.completed = !task.completed;
-        const updatedTask = await task.save();
-        res.json(updatedTask);
-    } catch (error) {
-        res.status(500).send('Error del servidor');
+        task = await Task.findByIdAndUpdate(req.params.id, { $set: req.body }, { new: true });
+        res.json(task);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Error del Servidor');
     }
 });
 
-// @desc    Eliminar una tarea
 // @route   DELETE /api/tasks/:id
-router.delete('/:id', async (req, res) => {
+// @desc    Eliminar una tarea
+router.delete('/:id', protect, async (req, res) => {
     try {
-        const task = await Task.findOne({ _id: req.params.id, user: req.user.id });
-
-        if (!task) {
-            return res.status(404).json({ message: 'Tarea no encontrada' });
+        let task = await Task.findById(req.params.id);
+        if (!task) return res.status(404).json({ msg: 'Tarea no encontrada' });
+        if (task.user.toString() !== req.user.id) {
+            return res.status(401).json({ msg: 'No autorizado' });
         }
-
-        await task.deleteOne(); // Usamos deleteOne() en el documento
-        res.json({ message: 'Tarea eliminada' });
-
-    } catch (error) {
-        res.status(500).send('Error del servidor');
+        await Task.findByIdAndDelete(req.params.id);
+        res.json({ msg: 'Tarea eliminada' });
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Error del Servidor');
     }
 });
-
 
 module.exports = router;
