@@ -1,5 +1,6 @@
 import React from 'react';
-import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
+// Importamos BrowserRouter para gestionar las rutas
+import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { DataProvider, useData } from './context/DataContext';
 import AuthScreen from './components/auth/AuthScreen';
@@ -11,7 +12,7 @@ import ExpensesSection from './components/sections/ExpensesSection';
 import MealsSection from './components/sections/MealsSection';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import ConfirmationModal from './components/common/ConfirmationModal'; // Importamos el modal
+import ConfirmationModal from './components/common/ConfirmationModal';
 
 const PrivateRoute = ({ children }) => {
     const { user, loading } = useAuth();
@@ -19,7 +20,6 @@ const PrivateRoute = ({ children }) => {
     return user ? children : <Navigate to="/auth" replace />;
 };
 
-// El layout ahora renderizará el modal
 const AppLayout = () => {
     const { modalState, closeModal, handleConfirm } = useData();
 
@@ -50,33 +50,36 @@ const AppLayout = () => {
 function App() {
     return (
         <AuthProvider>
-            <DataProvider> {/* Movimos DataProvider para envolver todas las rutas */}
-                <ToastContainer
-                    position="top-right"
-                    autoClose={5000}
-                    hideProgressBar={false}
-                    newestOnTop={false}
-                    closeOnClick
-                    rtl={false}
-                    pauseOnFocusLoss
-                    draggable
-                    pauseOnHover
-                    theme="colored"
-                />
-                <Routes>
-                    <Route path="/auth" element={<AuthScreen />} />
-                    <Route 
-                        path="/" 
-                        element={<PrivateRoute><AppLayout /></PrivateRoute>}
-                    >
-                        <Route index element={<Navigate to="/tasks" replace />} /> 
-                        <Route path="tasks" element={<TasksSection />} />
-                        <Route path="shopping" element={<ShoppingSection />} />
-                        <Route path="expenses" element={<ExpensesSection />} />
-                        <Route path="meals" element={<MealsSection />} />
-                    </Route>
-                    <Route path="*" element={<Navigate to="/" replace />} />
-                </Routes>
+            <DataProvider>
+                {/* Envolvemos todo en el Router para que las rutas funcionen */}
+                <Router>
+                    <ToastContainer
+                        position="top-right"
+                        autoClose={5000}
+                        hideProgressBar={false}
+                        newestOnTop={false}
+                        closeOnClick
+                        rtl={false}
+                        pauseOnFocusLoss
+                        draggable
+                        pauseOnHover
+                        theme="colored"
+                    />
+                    <Routes>
+                        <Route path="/auth" element={<AuthScreen />} />
+                        <Route 
+                            path="/" 
+                            element={<PrivateRoute><AppLayout /></PrivateRoute>}
+                        >
+                            <Route index element={<Navigate to="/tasks" replace />} /> 
+                            <Route path="tasks" element={<TasksSection />} />
+                            <Route path="shopping" element={<ShoppingSection />} />
+                            <Route path="expenses" element={<ExpensesSection />} />
+                            <Route path="meals" element={<MealsSection />} />
+                        </Route>
+                        <Route path="*" element={<Navigate to="/" replace />} />
+                    </Routes>
+                </Router>
             </DataProvider>
         </AuthProvider>
     );
