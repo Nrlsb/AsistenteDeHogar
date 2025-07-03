@@ -1,36 +1,27 @@
 const express = require('express');
-const dotenv = require('dotenv');
-const mongoose = require('mongoose');
 const cors = require('cors');
+const path = path = require('path');
+// Importamos y configuramos dotenv al principio de todo
+require('dotenv').config();
 
-dotenv.config();
-
-const authRoutes = require('./routes/authRoutes');
-const taskRoutes = require('./routes/taskRoutes');
-const shoppingRoutes = require('./routes/shoppingRoutes');
-const mealRoutes = require('./routes/mealRoutes');
-const expenseRoutes = require('./routes/expenseRoutes');
+// Ahora podemos usar las variables de entorno
+const connectDB = require('./config/db'); // Asumo que este archivo usa process.env.MONGO_URI
 
 const app = express();
 
-// Middleware
+// Conectar a la base de datos
+connectDB();
+
+// Middlewares
 app.use(cors());
 app.use(express.json());
 
-// --- NUEVA RUTA DE HEALTH CHECK ---
-// Puedes visitar la URL de tu backend (ej: https://asistentedehogar-backend.onrender.com)
-// para verificar que el servidor está corriendo y para "despertarlo".
-app.get('/', (req, res) => {
-    res.send('Asistente de Hogar API is running!');
-});
-
-// Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/tasks', taskRoutes);
-app.use('/api/shopping', shoppingRoutes);
-app.use('/api/meals', mealRoutes);
-app.use('/api/expenses', expenseRoutes);
-
+// Rutas de la API
+app.use('/api/auth', require('./routes/authRoutes'));
+app.use('/api/tasks', require('./routes/taskRoutes'));
+app.use('/api/shopping', require('./routes/shoppingRoutes'));
+app.use('/api/meals', require('./routes/mealRoutes'));
+app.use('/api/expenses', require('./routes/expenseRoutes'));
 
 const PORT = process.env.PORT || 5000;
 
