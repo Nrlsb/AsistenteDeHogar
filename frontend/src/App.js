@@ -1,5 +1,6 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
+// El componente Router se ha quitado de este archivo
+import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { DataProvider } from './context/DataContext';
 import AuthScreen from './components/auth/AuthScreen';
@@ -22,7 +23,6 @@ const PrivateRoute = ({ children }) => {
 };
 
 // Componente que define el layout principal de la aplicación.
-// Ahora usa <Outlet /> para renderizar las rutas hijas.
 const AppLayout = () => (
     <DataProvider>
         <div className="min-h-screen bg-gray-50">
@@ -31,7 +31,6 @@ const AppLayout = () => (
                 <div className="max-w-7xl mx-auto">
                     <Navigation />
                     <div className="mt-6 bg-white p-4 sm:p-6 rounded-lg shadow">
-                        {/* Outlet es el placeholder donde se renderizarán las secciones */}
                         <Outlet />
                     </div>
                 </div>
@@ -41,35 +40,33 @@ const AppLayout = () => (
 );
 
 function App() {
+    // Ya no necesitamos el componente <Router> aquí
     return (
-        <Router>
-            <AuthProvider>
-                <Routes>
-                    {/* Ruta pública para autenticación */}
-                    <Route path="/auth" element={<AuthScreen />} />
+        <AuthProvider>
+            <Routes>
+                {/* Ruta pública para autenticación */}
+                <Route path="/auth" element={<AuthScreen />} />
 
-                    {/* Rutas privadas anidadas dentro del layout principal */}
-                    <Route 
-                        path="/" 
-                        element={
-                            <PrivateRoute>
-                                <AppLayout />
-                            </PrivateRoute>
-                        }
-                    >
-                        {/* La ruta por defecto (/) redirige a /tasks */}
-                        <Route index element={<Navigate to="/tasks" replace />} /> 
-                        <Route path="tasks" element={<TasksSection />} />
-                        <Route path="shopping" element={<ShoppingSection />} />
-                        <Route path="expenses" element={<ExpensesSection />} />
-                        <Route path="meals" element={<MealsSection />} />
-                    </Route>
+                {/* Rutas privadas anidadas dentro del layout principal */}
+                <Route 
+                    path="/" 
+                    element={
+                        <PrivateRoute>
+                            <AppLayout />
+                        </PrivateRoute>
+                    }
+                >
+                    <Route index element={<Navigate to="/tasks" replace />} /> 
+                    <Route path="tasks" element={<TasksSection />} />
+                    <Route path="shopping" element={<ShoppingSection />} />
+                    <Route path="expenses" element={<ExpensesSection />} />
+                    <Route path="meals" element={<MealsSection />} />
+                </Route>
 
-                    {/* Cualquier otra ruta no definida redirige a la página principal */}
-                    <Route path="*" element={<Navigate to="/" replace />} />
-                </Routes>
-            </AuthProvider>
-        </Router>
+                {/* Cualquier otra ruta no definida redirige a la página principal */}
+                <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+        </AuthProvider>
     );
 }
 
