@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useData } from '../../context/DataContext';
+import ShoppingItem from '../items/ShoppingItem'; // Importamos el nuevo componente
 
 const ShoppingSection = () => {
-    const { shoppingItems, addShoppingItem, updateShoppingItem, deleteShoppingItem, loadingShopping, error } = useData();
+    const { shoppingItems, addShoppingItem, loadingShopping, error } = useData();
     const [newItem, setNewItem] = useState('');
 
     const handleSubmit = (e) => {
@@ -14,7 +15,6 @@ const ShoppingSection = () => {
     };
 
     return (
-        // El div contenedor principal se ha movido a App.js para un layout consistente
         <>
             <h2 className="text-2xl font-bold mb-4">Lista de Compras</h2>
             <form onSubmit={handleSubmit} className="flex mb-4">
@@ -23,9 +23,9 @@ const ShoppingSection = () => {
                     value={newItem}
                     onChange={(e) => setNewItem(e.target.value)}
                     placeholder="Añadir nuevo artículo"
-                    className="flex-grow p-2 border rounded-l-md focus:ring-blue-500 focus:border-blue-500"
+                    className="flex-grow p-2 border rounded-l-md focus:ring-green-500 focus:border-green-500"
                 />
-                <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded-r-md hover:bg-blue-600">
+                <button type="submit" className="bg-green-500 text-white px-4 py-2 rounded-r-md hover:bg-green-600">
                     + Añadir
                 </button>
             </form>
@@ -35,21 +35,12 @@ const ShoppingSection = () => {
 
             <ul className="space-y-2">
                 {shoppingItems.length > 0 ? (
+                    // Usamos el componente ShoppingItem para renderizar cada artículo
                     shoppingItems.map(item => (
-                        <li key={item._id} className="flex items-center justify-between p-2 bg-gray-50 rounded-md">
-                            <span 
-                                onClick={() => updateShoppingItem(item._id, { purchased: !item.purchased })}
-                                className={`cursor-pointer ${item.purchased ? 'line-through text-gray-500' : ''}`}
-                            >
-                                {item.name}
-                            </span>
-                            <button onClick={() => deleteShoppingItem(item._id)} className="text-red-500 hover:text-red-700">
-                                Eliminar
-                            </button>
-                        </li>
+                        <ShoppingItem key={item._id} item={item} />
                     ))
                 ) : (
-                    !loadingShopping && <p>La lista de compras está vacía.</p>
+                    !loadingShopping && <p>No hay artículos en la lista de compras.</p>
                 )}
             </ul>
         </>
