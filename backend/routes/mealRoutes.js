@@ -1,10 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const authMiddleware = require('../middleware/authMiddleware');
+// Importamos 'protect' directamente del middleware
+const { protect } = require('../middleware/authMiddleware');
 const MealPlan = require('../models/mealPlanModel');
 
-// Aplicamos el middleware a todas las rutas
-router.use(authMiddleware);
+// Aplicamos el middleware 'protect' a todas las rutas de este archivo.
+// Cualquier solicitud a /api/meals requerirá un token válido.
+router.use(protect);
 
 // @desc    Obtener el plan de comidas del usuario (lo crea si no existe)
 // @route   GET /api/meals
