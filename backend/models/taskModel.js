@@ -1,20 +1,22 @@
 const mongoose = require('mongoose');
 
-const TaskSchema = new mongoose.Schema({
+const taskSchema = new mongoose.Schema({
     user: {
         type: mongoose.Schema.Types.ObjectId,
         required: true,
         ref: 'User'
     },
-    text: {
+    // Corregido: Se cambia 'text' por 'description' para que coincida con el frontend y las rutas.
+    description: {
         type: String,
-        required: true,
-        trim: true
+        required: true
     },
     completed: {
         type: Boolean,
         default: false
     }
-}, { timestamps: true });
+}, {
+    timestamps: true
+});
 
-module.exports = mongoose.model('Task', TaskSchema);
+module.exports = mongoose.model('Task', taskSchema);
