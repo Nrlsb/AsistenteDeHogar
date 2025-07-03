@@ -28,6 +28,7 @@ router.post('/', protect, async (req, res) => {
         const item = await newItem.save();
         res.json(item);
     } catch (err) {
+        // Log del error completo para depuración en Render
         console.error('ERROR AL AÑADIR ARTÍCULO DE COMPRA:', err);
         res.status(500).send('Error del Servidor');
     }
