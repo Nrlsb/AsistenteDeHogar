@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useData } from '../../context/DataContext';
+import TaskItem from '../items/TaskItem'; // Importamos el nuevo componente
 
 const TasksSection = () => {
-    const { tasks, addTask, updateTask, deleteTask, loadingTasks, error } = useData();
+    const { tasks, addTask, loadingTasks, error } = useData();
     const [newTask, setNewTask] = useState('');
 
     const handleSubmit = (e) => {
@@ -14,7 +15,6 @@ const TasksSection = () => {
     };
 
     return (
-        // El div contenedor principal se ha movido a App.js para un layout consistente
         <>
             <h2 className="text-2xl font-bold mb-4">Lista de Tareas</h2>
             <form onSubmit={handleSubmit} className="flex mb-4">
@@ -35,18 +35,9 @@ const TasksSection = () => {
             
             <ul className="space-y-2">
                 {tasks.length > 0 ? (
+                    // Usamos el componente TaskItem para renderizar cada tarea
                     tasks.map(task => (
-                        <li key={task._id} className="flex items-center justify-between p-2 bg-gray-50 rounded-md">
-                            <span 
-                                onClick={() => updateTask(task._id, { completed: !task.completed })}
-                                className={`cursor-pointer ${task.completed ? 'line-through text-gray-500' : ''}`}
-                            >
-                                {task.description}
-                            </span>
-                            <button onClick={() => deleteTask(task._id)} className="text-red-500 hover:text-red-700">
-                                Eliminar
-                            </button>
-                        </li>
+                        <TaskItem key={task._id} task={task} />
                     ))
                 ) : (
                     !loadingTasks && <p>No hay tareas pendientes.</p>

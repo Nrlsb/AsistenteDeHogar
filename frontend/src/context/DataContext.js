@@ -61,6 +61,10 @@ export const DataProvider = ({ children }) => {
         try {
             const { data } = await api.updateTask(id, taskData);
             setTasks(prev => prev.map(t => (t._id === id ? data : t)));
+            // Solo mostramos notificación si no es solo marcar como completada
+            if (taskData.description) {
+                toast.success('Tarea actualizada.');
+            }
         } catch (err) { 
             toast.error('Error al actualizar la tarea.');
         }
@@ -99,6 +103,10 @@ export const DataProvider = ({ children }) => {
         try {
             const { data } = await api.updateShoppingItem(id, itemData);
             setShoppingItems(prev => prev.map(i => (i._id === id ? data : i)));
+            // Solo mostramos notificación si no es solo marcar como comprado
+            if (itemData.name) {
+                toast.success('Artículo actualizado.');
+            }
         } catch (err) { 
             toast.error('Error al actualizar el artículo.');
         }
