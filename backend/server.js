@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const path = path = require('path');
+const path = require('path');
 // Importamos y configuramos dotenv al principio de todo
 require('dotenv').config();
 
