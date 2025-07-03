@@ -1,88 +1,78 @@
 import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
-import { registerUser, loginUser } from '../services/apiService';
+import { useNavigate } from 'react-router-dom';
+import * as api from '../services/apiService';
 
-// 1. Se crea un valor por defecto para el contexto.
-// Esto previene que la aplicación se rompa si un componente intenta
-// usar el contexto sin que un Provider esté disponible.
-const defaultAuthContext = {
-    user: null,
-    error: null,
-    loading: false,
-    isAuthReady: false, // Por defecto es 'false' para que la app muestre el loader
-    login: () => Promise.reject(new Error("AuthProvider no encontrado")),
-    register: () => Promise.reject(new Error("AuthProvider no encontrado")),
-    logout: () => { throw new Error("AuthProvider no encontrado"); },
-    clearError: () => {}
-};
-
-// 2. Se usa el valor por defecto al crear el contexto.
-const AuthContext = createContext(defaultAuthContext);
+const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
+    const [loading, setLoading] = useState(true); // Para la carga inicial de la página
+    const [authLoading, setAuthLoading] = useState(false); // Para las acciones de login/registro
     const [error, setError] = useState(null);
-    const [loading, setLoading] = useState(false);
-    const [isAuthReady, setIsAuthReady] = useState(false);
+    const navigate = useNavigate();
 
-    // Este efecto se ejecuta solo una vez para verificar si hay un usuario en localStorage.
+    // Usamos useCallback para evitar que navigate cause re-renders innecesarios
+    const memoizedNavigate = useCallback(navigate, []);
+
     useEffect(() => {
-        try {
-            const storedUser = localStorage.getItem('user');
-            if (storedUser) {
-                setUser(JSON.parse(storedUser));
+        const userStr = localStorage.getItem('user');
+        if (userStr) {
+            try {
+                const parsedUser = JSON.parse(userStr);
+                setUser(parsedUser);
+            } catch (e) {
+                console.error("Fallo al parsear el usuario desde localStorage", e);
+                localStorage.removeItem('user');
             }
-        } catch (e) {
-            console.error("Fallo al leer usuario de localStorage", e);
-            localStorage.removeItem('user');
-        } finally {
-            // Se marca la verificación como completa para que App.js pueda renderizar.
-            setIsAuthReady(true);
         }
+        setLoading(false);
     }, []);
 
-    const handleAuth = useCallback(async (authPromise) => {
+    const login = async (userData) => {
+        setAuthLoading(true);
         setError(null);
-        setLoading(true);
         try {
-            const response = await authPromise;
-            const userData = response.data;
-            localStorage.setItem('user', JSON.stringify(userData));
-            setUser(userData);
-            return { success: true };
+            const { data } = await api.loginUser(userData);
+            localStorage.setItem('user', JSON.stringify(data));
+            setUser(data);
+            memoizedNavigate('/tasks');
         } catch (err) {
-            const errorMessage = err.response?.data?.message || 'Error de red. Por favor, inténtalo de nuevo.';
-            setError(errorMessage);
-            console.error("Error de autenticación:", err);
-            return { success: false, error: errorMessage };
+            console.error("Fallo el inicio de sesión:", err); // Registramos el error completo en consola
+            setError(err.response?.data?.message || 'Error al iniciar sesión. Verifique sus credenciales.');
         } finally {
-            setLoading(false);
+            setAuthLoading(false);
         }
-    }, []);
+    };
 
-    const login = useCallback((credentials) => {
-        return handleAuth(loginUser(credentials));
-    }, [handleAuth]);
+    const register = async (userData) => {
+        setAuthLoading(true);
+        setError(null);
+        try {
+            const { data } = await api.registerUser(userData);
+            localStorage.setItem('user', JSON.stringify(data));
+            setUser(data);
+            memoizedNavigate('/tasks');
+        } catch (err) {
+            console.error("Fallo el registro:", err); // Registramos el error completo en consola
+            setError(err.response?.data?.message || 'Error al registrarse. Intente de nuevo.');
+        } finally {
+            setAuthLoading(false);
+        }
+    };
 
-    const register = useCallback((userData) => {
-        return handleAuth(registerUser(userData));
-    }, [handleAuth]);
-
-    const logout = useCallback(() => {
+    const logout = () => {
         localStorage.removeItem('user');
         setUser(null);
-    }, []);
-
-    const value = { user, error, loading, isAuthReady, login, register, logout, clearError: () => setError(null) };
+        memoizedNavigate('/auth');
+    };
 
     return (
-        <AuthContext.Provider value={value}>
+        <AuthContext.Provider value={{ user, loading, authLoading, error, login, register, logout, setError }}>
             {children}
         </AuthContext.Provider>
     );
 };
 
-// 3. El hook ahora simplemente devuelve el contexto.
-// Ya no necesita una comprobación extra porque siempre habrá un valor por defecto.
 export const useAuth = () => {
     return useContext(AuthContext);
 };

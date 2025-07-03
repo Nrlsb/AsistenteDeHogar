@@ -1,111 +1,94 @@
-import React, { useState } from 'react';
-// Importamos el hook 'useAuth' para acceder al contexto de autenticación
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 
 const AuthScreen = () => {
-    const [isLogin, setIsLogin] = useState(true); // Empezamos en la vista de Login
+    const [isLogin, setIsLogin] = useState(true);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [name, setName] = useState(''); // Añadimos estado para el nombre en el registro
-    const [error, setError] = useState('');
+    const [name, setName] = useState('');
     
-    // Obtenemos las funciones de login y register del contexto
-    const { login, register } = useAuth();
+    // Obtenemos authLoading y el nuevo setError del contexto
+    const { login, register, error, authLoading, setError } = useAuth();
+
+    // Limpiamos el error cuando se cambia entre login/registro
+    useEffect(() => {
+        if (error) {
+            setError(null);
+        }
+    }, [isLogin, setError]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setError(''); // Limpiamos errores previos
-
-        try {
-            if (isLogin) {
-                // Llamamos a la función de login del contexto
-                await login({ email, password });
-                // No es necesario redirigir aquí, el App.js lo manejará
-            } else {
-                // Llamamos a la función de register del contexto
-                await register({ name, email, password });
-            }
-        } catch (err) {
-            // Mostramos un mensaje de error más descriptivo desde la respuesta del backend
-            const errorMessage = err.response?.data?.message || `Error al ${isLogin ? 'iniciar sesión' : 'registrarse'}.`;
-            setError(errorMessage);
-            console.error(err);
+        if (isLogin) {
+            await login({ email, password });
+        } else {
+            await register({ name, email, password });
         }
     };
 
-    const toggleForm = () => {
-        setIsLogin(!isLogin);
-        setError('');
-        // Limpiamos los campos al cambiar de formulario
-        setEmail('');
-        setPassword('');
-        setName('');
-    };
-
     return (
-        <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
             <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
-                <h2 className="text-2xl font-bold text-center mb-6">{isLogin ? 'Iniciar Sesión' : 'Crear Cuenta'}</h2>
+                <h2 className="text-2xl font-bold text-center mb-6">{isLogin ? 'Iniciar Sesión' : 'Registrarse'}</h2>
+                
+                {error && <p className="bg-red-100 text-red-700 p-3 rounded-md text-center mb-4">{error}</p>}
+                
                 <form onSubmit={handleSubmit}>
-                    {/* Campo de nombre solo para el registro */}
                     {!isLogin && (
-                         <div className="mb-4">
-                            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="name">
-                                Nombre
-                            </label>
+                        <div className="mb-4">
+                            <label className="block text-gray-700 mb-2" htmlFor="name">Nombre</label>
                             <input
-                                id="name"
                                 type="text"
+                                id="name"
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
-                                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                                required
+                                className="w-full p-2 border rounded-md focus:ring-blue-500 focus:border-blue-500"
+                                required={!isLogin}
                             />
                         </div>
                     )}
                     <div className="mb-4">
-                        <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="email">
-                            Email
-                        </label>
+                        <label className="block text-gray-700 mb-2" htmlFor="email">Email</label>
                         <input
-                            id="email"
                             type="email"
+                            id="email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                            className="w-full p-2 border rounded-md focus:ring-blue-500 focus:border-blue-500"
                             required
                         />
                     </div>
                     <div className="mb-6">
-                        <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="password">
-                            Contraseña
-                        </label>
+                        <label className="block text-gray-700 mb-2" htmlFor="password">Contraseña</label>
                         <input
-                            id="password"
                             type="password"
+                            id="password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline"
+                            className="w-full p-2 border rounded-md focus:ring-blue-500 focus:border-blue-500"
                             required
                         />
                     </div>
-                    {error && <p className="text-red-500 text-xs italic mb-4">{error}</p>}
-                    <div className="flex flex-col items-center justify-between">
-                        <button
-                            type="submit"
-                            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full"
-                        >
-                            {isLogin ? 'Iniciar Sesión' : 'Registrarse'}
-                        </button>
-                        <button
-                            type="button"
-                            onClick={toggleForm}
-                            className="inline-block align-baseline font-bold text-sm text-blue-500 hover:text-blue-800 mt-4"
-                        >
-                            {isLogin ? '¿No tienes cuenta? Regístrate' : '¿Ya tienes cuenta? Inicia sesión'}
-                        </button>
-                    </div>
+                    <button
+                        type="submit"
+                        disabled={authLoading} // Deshabilitamos el botón mientras carga
+                        className="w-full bg-blue-500 text-white p-3 rounded-md hover:bg-blue-600 transition-colors disabled:bg-blue-300 disabled:cursor-not-allowed flex items-center justify-center"
+                    >
+                        {authLoading && (
+                            <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                        )}
+                        {authLoading ? 'Procesando...' : (isLogin ? 'Iniciar Sesión' : 'Registrarse')}
+                    </button>
                 </form>
+                <p className="text-center mt-4 text-sm">
+                    {isLogin ? '¿No tienes cuenta?' : '¿Ya tienes cuenta?'}
+                    <button onClick={() => setIsLogin(!isLogin)} className="font-medium text-blue-600 hover:underline ml-1">
+                        {isLogin ? 'Regístrate' : 'Inicia Sesión'}
+                    </button>
+                </p>
             </div>
         </div>
     );
