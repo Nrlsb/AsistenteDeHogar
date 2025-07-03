@@ -1,5 +1,4 @@
 import React from 'react';
-// El componente Router se ha quitado de este archivo
 import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { DataProvider } from './context/DataContext';
@@ -10,6 +9,8 @@ import TasksSection from './components/sections/TasksSection';
 import ShoppingSection from './components/sections/ShoppingSection';
 import ExpensesSection from './components/sections/ExpensesSection';
 import MealsSection from './components/sections/MealsSection';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 // Componente para proteger rutas que solo usuarios logueados pueden ver
 const PrivateRoute = ({ children }) => {
@@ -40,9 +41,21 @@ const AppLayout = () => (
 );
 
 function App() {
-    // Ya no necesitamos el componente <Router> aquí
     return (
         <AuthProvider>
+            {/* Contenedor para las notificaciones. Se renderizará sobre toda la app. */}
+            <ToastContainer
+                position="top-right"
+                autoClose={5000}
+                hideProgressBar={false}
+                newestOnTop={false}
+                closeOnClick
+                rtl={false}
+                pauseOnFocusLoss
+                draggable
+                pauseOnHover
+                theme="colored"
+            />
             <Routes>
                 {/* Ruta pública para autenticación */}
                 <Route path="/auth" element={<AuthScreen />} />

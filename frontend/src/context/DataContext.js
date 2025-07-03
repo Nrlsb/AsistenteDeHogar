@@ -1,6 +1,7 @@
 import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
 import * as api from '../services/apiService';
 import { useAuth } from './AuthContext';
+import { toast } from 'react-toastify';
 
 const defaultDataContext = {
     tasks: [],
@@ -13,9 +14,9 @@ const defaultDataContext = {
     addShoppingItem: () => {},
     updateShoppingItem: () => {},
     deleteShoppingItem: () => {},
-    mealPlan: null, // Cambiado de `meals` a `mealPlan`
+    mealPlan: null,
     loadingMeals: false,
-    updateSingleMeal: () => {}, // Nueva función para actualizar una comida
+    updateSingleMeal: () => {},
     expenses: [],
     loadingExpenses: false,
     addExpense: () => {},
@@ -30,7 +31,7 @@ export const DataProvider = ({ children }) => {
 
     const [tasks, setTasks] = useState([]);
     const [shoppingItems, setShoppingItems] = useState([]);
-    const [mealPlan, setMealPlan] = useState(null); // Estado para el plan de comidas
+    const [mealPlan, setMealPlan] = useState(null);
     const [expenses, setExpenses] = useState([]);
 
     const [loading, setLoading] = useState({ tasks: false, shopping: false, meals: false, expenses: false });
@@ -51,19 +52,27 @@ export const DataProvider = ({ children }) => {
         try {
             const { data } = await api.addTask(taskData);
             setTasks(prev => [...prev, data]);
-        } catch (err) { setError('Error al añadir la tarea.'); }
+            toast.success('¡Tarea añadida con éxito!');
+        } catch (err) { 
+            toast.error('Error al añadir la tarea.');
+        }
     };
     const updateTask = async (id, taskData) => {
         try {
             const { data } = await api.updateTask(id, taskData);
             setTasks(prev => prev.map(t => (t._id === id ? data : t)));
-        } catch (err) { setError('Error al actualizar la tarea.'); }
+        } catch (err) { 
+            toast.error('Error al actualizar la tarea.');
+        }
     };
     const deleteTask = async (id) => {
         try {
             await api.deleteTask(id);
             setTasks(prev => prev.filter(t => t._id !== id));
-        } catch (err) { setError('Error al eliminar la tarea.'); }
+            toast.info('Tarea eliminada.');
+        } catch (err) { 
+            toast.error('Error al eliminar la tarea.');
+        }
     };
 
     // --- Lógica de Compras ---
@@ -81,22 +90,30 @@ export const DataProvider = ({ children }) => {
         try {
             const { data } = await api.addShoppingItem(itemData);
             setShoppingItems(prev => [...prev, data]);
-        } catch (err) { setError('Error al añadir el artículo.'); }
+            toast.success('¡Artículo añadido a la lista!');
+        } catch (err) { 
+            toast.error('Error al añadir el artículo.');
+        }
     };
     const updateShoppingItem = async (id, itemData) => {
         try {
             const { data } = await api.updateShoppingItem(id, itemData);
             setShoppingItems(prev => prev.map(i => (i._id === id ? data : i)));
-        } catch (err) { setError('Error al actualizar el artículo.'); }
+        } catch (err) { 
+            toast.error('Error al actualizar el artículo.');
+        }
     };
     const deleteShoppingItem = async (id) => {
         try {
             await api.deleteShoppingItem(id);
             setShoppingItems(prev => prev.filter(i => i._id !== id));
-        } catch (err) { setError('Error al eliminar el artículo.'); }
+            toast.info('Artículo eliminado.');
+        } catch (err) { 
+            toast.error('Error al eliminar el artículo.');
+        }
     };
 
-    // --- Lógica de Comidas (CORREGIDA) ---
+    // --- Lógica de Comidas ---
     const fetchMealPlan = useCallback(async () => {
         if (!user) return;
         setLoading(prev => ({ ...prev, meals: true }));
@@ -113,18 +130,15 @@ export const DataProvider = ({ children }) => {
     const updateSingleMeal = async (day, mealType, value) => {
         if (!mealPlan) return;
         
-        // Creamos una nueva copia del plan para no mutar el estado directamente
         const newMealPlan = { ...mealPlan, [day]: { ...mealPlan[day], [mealType]: value }};
 
         try {
-            // Actualizamos el estado local inmediatamente para una UI más rápida
             setMealPlan(newMealPlan); 
-            // Enviamos la actualización completa al backend
             await api.updateMealPlan(newMealPlan);
+            toast.success('Plan de comidas actualizado.');
         } catch (err) {
-            setError('Error al actualizar la comida.');
+            toast.error('Error al actualizar la comida.');
             console.error(err);
-            // Si falla, podríamos revertir al estado anterior
             fetchMealPlan();
         }
     };
@@ -144,13 +158,19 @@ export const DataProvider = ({ children }) => {
         try {
             const { data } = await api.addExpense(expenseData);
             setExpenses(prev => [...prev, data].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
-        } catch (err) { setError('Error al añadir el gasto.'); }
+            toast.success('¡Gasto añadido con éxito!');
+        } catch (err) { 
+            toast.error('Error al añadir el gasto.');
+        }
     };
     const deleteExpense = async (id) => {
         try {
             await api.deleteExpense(id);
             setExpenses(prev => prev.filter(e => e._id !== id));
-        } catch (err) { setError('Error al eliminar el gasto.'); }
+            toast.info('Gasto eliminado.');
+        } catch (err) { 
+            toast.error('Error al eliminar el gasto.');
+        }
     };
 
     // Efecto para cargar todos los datos cuando el usuario inicia sesión
