@@ -6,13 +6,16 @@ import { toast } from 'react-toastify';
 
 export const DataContext = createContext();
 
+// CORRECCIÓN: Exportamos un hook personalizado para consumir el contexto fácilmente.
+export const useData = () => useContext(DataContext);
+
 export const DataProvider = ({ children }) => {
   const { user } = useContext(AuthContext);
   const [loading, setLoading] = useState(true);
 
   // Estados para cada sección
   const [tasks, setTasks] = useState([]);
-  const [shoppingLists, setShoppingLists] = useState([]); // Antes era shoppingItems
+  const [shoppingLists, setShoppingLists] = useState([]);
   const [expenses, setExpenses] = useState([]);
   const [meals, setMeals] = useState({
     lunes: '', martes: '', miercoles: '', jueves: '', viernes: '', sabado: '', domingo: ''
@@ -25,13 +28,13 @@ export const DataProvider = ({ children }) => {
           setLoading(true);
           const [tasksData, shoppingListsData, expensesData, mealsData] = await Promise.all([
             apiService.getTasks(user.token),
-            apiService.getShoppingLists(user.token), // Nueva función
+            apiService.getShoppingLists(user.token),
             apiService.getExpenses(user.token),
             apiService.getMeals(user.token),
           ]);
 
           setTasks(tasksData);
-          setShoppingLists(shoppingListsData); // Nuevo estado
+          setShoppingLists(shoppingListsData);
           setExpenses(expensesData);
           if (mealsData) {
             setMeals(mealsData);
@@ -43,7 +46,6 @@ export const DataProvider = ({ children }) => {
           setLoading(false);
         }
       } else {
-        // Si no hay usuario, reseteamos los datos
         setTasks([]);
         setShoppingLists([]);
         setExpenses([]);
@@ -55,7 +57,7 @@ export const DataProvider = ({ children }) => {
     fetchData();
   }, [user]);
 
-  // --- Funciones de Tareas (sin cambios) ---
+  // --- Funciones de Tareas ---
   const addTask = async (taskData) => {
     try {
       const newTask = await apiService.createTask(taskData, user.token);
@@ -86,7 +88,7 @@ export const DataProvider = ({ children }) => {
     }
   };
 
-  // --- Funciones de Listas de Compras (MODIFICADO) ---
+  // --- Funciones de Listas de Compras ---
   const addShoppingList = async (listName) => {
     try {
       const newList = await apiService.createShoppingList({ name: listName }, user.token);
@@ -117,7 +119,7 @@ export const DataProvider = ({ children }) => {
     }
   };
 
-  // --- Funciones de Artículos de Compra (MODIFICADO) ---
+  // --- Funciones de Artículos de Compra ---
   const addShoppingItem = async (listId, itemData) => {
     try {
         const { newItem } = await apiService.addShoppingItemToList(listId, itemData, user.token);
@@ -169,8 +171,7 @@ export const DataProvider = ({ children }) => {
     }
   };
 
-
-  // --- Funciones de Gastos y Comidas (sin cambios) ---
+  // --- Funciones de Gastos y Comidas ---
   const addExpense = async (expenseData) => {
     try {
       const newExpense = await apiService.createExpense(expenseData, user.token);
