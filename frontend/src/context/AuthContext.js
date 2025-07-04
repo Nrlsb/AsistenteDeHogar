@@ -1,8 +1,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import * as api from '../services/apiService';
+import { toast } from 'react-toastify'; // Importamos toast para las notificaciones
 
-// Objeto con el estado por defecto para el contexto de autenticación.
-// Esto previene que la aplicación se rompa.
 const defaultAuthContext = {
     user: null,
     token: null,
@@ -24,12 +23,12 @@ export const AuthProvider = ({ children }) => {
     useEffect(() => {
         const verifyUser = async () => {
             if (token) {
-                // La función setAuthToken no es necesaria gracias al interceptor de Axios
                 try {
                     const { data } = await api.getMe();
                     setUser(data);
                 } catch (err) {
                     console.error("Error de autenticación, token inválido.");
+                    // Limpiamos el estado si el token no es válido
                     localStorage.removeItem('token');
                     setToken(null);
                     setUser(null);
@@ -43,12 +42,15 @@ export const AuthProvider = ({ children }) => {
     const login = async (userData) => {
         try {
             const { data } = await api.login(userData);
+            // La única responsabilidad de login es obtener y establecer el token.
             localStorage.setItem('token', data.token);
-            setToken(data.token);
-            setUser(data);
+            setToken(data.token); // Esto activará el useEffect para obtener los datos del usuario
             setError(null);
+            toast.success('¡Bienvenido de nuevo!');
         } catch (err) {
-            setError(err.response?.data?.message || 'Error al iniciar sesión');
+            const errorMessage = err.response?.data?.message || 'Error al iniciar sesión';
+            setError(errorMessage);
+            toast.error(errorMessage); // Mostramos el error con una notificación
             throw err;
         }
     };
@@ -58,10 +60,12 @@ export const AuthProvider = ({ children }) => {
             const { data } = await api.register(userData);
             localStorage.setItem('token', data.token);
             setToken(data.token);
-            setUser(data);
             setError(null);
+            toast.success('¡Registro exitoso! Bienvenido.');
         } catch (err) {
-            setError(err.response?.data?.message || 'Error al registrarse');
+            const errorMessage = err.response?.data?.message || 'Error al registrarse';
+            setError(errorMessage);
+            toast.error(errorMessage);
             throw err;
         }
     };
@@ -70,7 +74,7 @@ export const AuthProvider = ({ children }) => {
         localStorage.removeItem('token');
         setToken(null);
         setUser(null);
-        // La función setAuthToken no es necesaria aquí tampoco.
+        toast.info('Has cerrado sesión.');
     };
 
     const value = { user, token, login, register, logout, loading, error };
