@@ -1,41 +1,26 @@
+// backend/models/shoppingItemModel.js
 const mongoose = require('mongoose');
 
-const shoppingCategorySchema = new mongoose.Schema({
-    user: {
-        type: mongoose.Schema.Types.ObjectId,
-        required: true,
-        ref: 'User'
+const shoppingItemSchema = mongoose.Schema(
+  {
+    // Ya no necesita una referencia de 'user' aquí, porque estará anidado en una ShoppingList que tiene un propietario.
+    text: {
+      type: String,
+      required: [true, 'Por favor, añade texto para el artículo'],
     },
-    name: {
-        type: String,
-        required: true
-    }
-});
+    completed: {
+      type: Boolean,
+      default: false,
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
 
-const shoppingItemSchema = new mongoose.Schema({
-    user: {
-        type: mongoose.Schema.Types.ObjectId,
-        required: true,
-        ref: 'User'
-    },
-    name: {
-        type: String,
-        required: true
-    },
-    purchased: {
-        type: Boolean,
-        default: false
-    },
-    // Corregido: Se elimina 'required: true' para hacer la categoría opcional por ahora.
-    category: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'ShoppingCategory'
-    }
-}, {
-    timestamps: true
-});
-
-const ShoppingCategory = mongoose.model('ShoppingCategory', shoppingCategorySchema);
-const ShoppingItem = mongoose.model('ShoppingItem', shoppingItemSchema);
-
-module.exports = { ShoppingItem, ShoppingCategory };
+// No creamos un modelo a partir de este esquema porque será usado de forma anidada.
+// Lo exportamos para poder usarlo en shoppingListModel.
+module.exports = {
+    ShoppingItem: mongoose.model('ShoppingItem', shoppingItemSchema), // Exportamos el modelo por si se necesita
+    shoppingItemSchema: shoppingItemSchema
+};
