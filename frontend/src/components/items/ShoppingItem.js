@@ -1,68 +1,43 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { useData } from '../../context/DataContext';
+// frontend/src/components/items/ShoppingItem.js
+import React, { useContext } from 'react';
+import { DataContext } from '../../context/DataContext';
+import { FaTrash } from 'react-icons/fa';
 
-const ShoppingItem = ({ item }) => {
-    const { updateShoppingItem, deleteShoppingItem } = useData();
-    const [isEditing, setIsEditing] = useState(false);
-    const [name, setName] = useState(item.name);
-    const inputRef = useRef(null);
+const ShoppingItem = ({ item, listId }) => {
+  const { updateShoppingItem, deleteShoppingItem } = useContext(DataContext);
 
-    // Enfocar el input cuando el modo de edición se activa
-    useEffect(() => {
-        if (isEditing) {
-            inputRef.current?.focus();
-        }
-    }, [isEditing]);
+  const handleToggleComplete = () => {
+    // Llama a la función del contexto para actualizar el estado del artículo
+    updateShoppingItem(listId, item._id, { completed: !item.completed });
+  };
 
-    const handleUpdate = () => {
-        if (name.trim() && name !== item.name) {
-            updateShoppingItem(item._id, { name });
-        }
-        setIsEditing(false);
-    };
+  const handleDelete = () => {
+    // Llama a la función del contexto para eliminar el artículo
+    deleteShoppingItem(listId, item._id);
+  };
 
-    const handleKeyDown = (e) => {
-        if (e.key === 'Enter') {
-            handleUpdate();
-        } else if (e.key === 'Escape') {
-            setName(item.name); // Revertir cambios
-            setIsEditing(false);
-        }
-    };
-
-    return (
-        <li className="flex items-center justify-between p-3 bg-gray-50 rounded-md hover:bg-gray-100 transition-colors">
-            <div className="flex items-center flex-grow mr-4">
-                <input
-                    type="checkbox"
-                    checked={item.purchased}
-                    onChange={() => updateShoppingItem(item._id, { purchased: !item.purchased })}
-                    className="h-5 w-5 rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
-                />
-                {isEditing ? (
-                    <input
-                        ref={inputRef}
-                        type="text"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        onBlur={handleUpdate}
-                        onKeyDown={handleKeyDown}
-                        className="ml-3 p-1 border rounded-md w-full"
-                    />
-                ) : (
-                    <span
-                        onClick={() => setIsEditing(true)}
-                        className={`ml-3 cursor-pointer ${item.purchased ? 'line-through text-gray-500' : ''}`}
-                    >
-                        {item.name}
-                    </span>
-                )}
-            </div>
-            <button onClick={() => deleteShoppingItem(item._id)} className="text-red-500 hover:text-red-700 transition-colors">
-                <i className="fas fa-trash"></i>
-            </button>
-        </li>
-    );
+  return (
+    <div className={`flex items-center justify-between p-3 rounded-lg transition-all duration-200 ${item.completed ? 'bg-green-50' : 'bg-white hover:bg-gray-50'}`}>
+      <div className="flex items-center gap-4">
+        <input
+          type="checkbox"
+          checked={item.completed}
+          onChange={handleToggleComplete}
+          className="h-5 w-5 rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
+        />
+        <span className={`flex-grow ${item.completed ? 'line-through text-gray-400' : 'text-gray-800'}`}>
+          {item.text}
+        </span>
+      </div>
+      <button
+        onClick={handleDelete}
+        className="text-gray-400 hover:text-red-600 transition-colors opacity-50 hover:opacity-100"
+        aria-label="Eliminar artículo"
+      >
+        <FaTrash />
+      </button>
+    </div>
+  );
 };
 
 export default ShoppingItem;
