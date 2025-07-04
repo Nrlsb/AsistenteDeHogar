@@ -1,6 +1,7 @@
 // backend/models/shoppingListModel.js
 const mongoose = require('mongoose');
-const { shoppingItemSchema } = require('./shoppingItemModel');
+// CORRECCIÓN: Apuntamos al archivo correcto 'shoppingModels.js'
+const { shoppingItemSchema } = require('./shoppingModels.js'); 
 
 const shoppingListSchema = mongoose.Schema(
   {
