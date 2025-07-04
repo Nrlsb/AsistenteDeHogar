@@ -1,7 +1,7 @@
 // frontend/src/components/shopping/ShoppingListCard.js
 import React, { useState, useContext } from 'react';
 import { DataContext } from '../../context/DataContext';
-import { AuthContext } from '../../context/AuthContext';
+import { useAuth } from '../../context/AuthContext'; // CORRECCIÓN: Importamos el hook 'useAuth'
 import ShoppingItem from '../items/ShoppingItem';
 import { FaTrash, FaShareAlt, FaPlus, FaUserFriends } from 'react-icons/fa';
 import ConfirmationModal from '../common/ConfirmationModal';
@@ -12,7 +12,7 @@ const ShoppingListCard = ({ list }) => {
     deleteShoppingList, 
     shareShoppingList 
   } = useContext(DataContext);
-  const { user } = useContext(AuthContext);
+  const { user } = useAuth(); // CORRECCIÓN: Usamos el hook para acceder al contexto
 
   const [newItemText, setNewItemText] = useState('');
   const [shareEmail, setShareEmail] = useState('');
@@ -35,7 +35,6 @@ const ShoppingListCard = ({ list }) => {
   };
 
   // El propietario es quien creó la lista. Comparamos el ID del usuario logueado con el ID del usuario en la lista.
-  // El objeto 'user' de la lista puede estar poblado (con ._id) o ser solo el ID.
   const isOwner = user.id === (list.user?._id || list.user);
 
   return (

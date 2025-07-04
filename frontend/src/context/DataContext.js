@@ -1,16 +1,15 @@
 // frontend/src/context/DataContext.js
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import apiService from '../services/apiService';
-import { AuthContext } from './AuthContext';
+import { useAuth } from './AuthContext'; // CORRECCIÓN: Importamos el hook 'useAuth'
 import { toast } from 'react-toastify';
 
 export const DataContext = createContext();
 
-// CORRECCIÓN: Exportamos un hook personalizado para consumir el contexto fácilmente.
 export const useData = () => useContext(DataContext);
 
 export const DataProvider = ({ children }) => {
-  const { user } = useContext(AuthContext);
+  const { user } = useAuth(); // CORRECCIÓN: Usamos el hook para acceder al contexto
   const [loading, setLoading] = useState(true);
 
   // Estados para cada sección
