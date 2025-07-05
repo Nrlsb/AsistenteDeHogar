@@ -4,8 +4,8 @@
 [build]
   # Comando para construir el proyecto de React
   command = "npm run build"
-  # Directorio donde se encuentra el resultado de la construcción
-  publish = "frontend/build"
+  # CORRECCIÓN: La carpeta de publicación es 'build', relativa al directorio base.
+  publish = "build"
   # Directorio base desde donde se ejecuta el comando de construcción
   base = "frontend"
 
@@ -14,7 +14,6 @@
   # Captura cualquier petición que comience con /api/
   from = "/api/*"
   # Reenvía la petición a tu backend en Render.
-  # ¡ASEGÚRATE DE QUE ESTA URL SEA EXACTAMENTE LA DE TU SERVICIO EN RENDER!
   to = "https://asistentedehogarapi.onrender.com/api/:splat"
   # Estado 200 para que funcione como un proxy y no una redirección visible
   status = 200
@@ -22,7 +21,6 @@
   force = true
 
 # Regla para aplicaciones de una sola página (Single Page Application)
-# Esto asegura que si recargas la página en una ruta como /tasks, no dé un error 404.
 [[redirects]]
   from = "/*"
   to = "/index.html"
