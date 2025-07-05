@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { BrowserRouter as Router } from 'react-router-dom';
+// Se elimina la importación de 'Router' porque ya no se utiliza.
+// import { BrowserRouter as Router } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import { DataProvider } from './context/DataContext';
 import AuthScreen from './components/auth/AuthScreen';
@@ -36,41 +37,36 @@ function App() {
     };
 
     return (
-        <Router>
-            <DataProvider>
-                <div className="flex h-screen bg-gray-100">
-                    {user ? (
-                        <>
-                            <div className="w-64 flex-shrink-0">
-                                {/* --- CORRECCIÓN --- 
-                                    Se pasa la prop 'activeSection' al componente Navigation 
-                                    para que pueda resaltar la sección activa correctamente. 
-                                */}
-                                <Navigation onNavigate={setActiveSection} activeSection={activeSection} />
-                            </div>
-                            <main className="flex-1 p-6 overflow-y-auto">
-                                {renderSection()}
-                            </main>
-                        </>
-                    ) : (
-                        <AuthScreen />
-                    )}
-                </div>
-                <ConfirmationModal />
-                <ToastContainer
-                    position="bottom-right"
-                    autoClose={4000}
-                    hideProgressBar={false}
-                    newestOnTop={false}
-                    closeOnClick
-                    rtl={false}
-                    pauseOnFocusLoss
-                    draggable
-                    pauseOnHover
-                    theme="colored"
-                />
-            </DataProvider>
-        </Router>
+        // Se elimina el componente <Router> que envolvía la aplicación.
+        <DataProvider>
+            <div className="flex h-screen bg-gray-100">
+                {user ? (
+                    <>
+                        <div className="w-64 flex-shrink-0">
+                            <Navigation onNavigate={setActiveSection} activeSection={activeSection} />
+                        </div>
+                        <main className="flex-1 p-6 overflow-y-auto">
+                            {renderSection()}
+                        </main>
+                    </>
+                ) : (
+                    <AuthScreen />
+                )}
+            </div>
+            <ConfirmationModal />
+            <ToastContainer
+                position="bottom-right"
+                autoClose={4000}
+                hideProgressBar={false}
+                newestOnTop={false}
+                closeOnClick
+                rtl={false}
+                pauseOnFocusLoss
+                draggable
+                pauseOnHover
+                theme="colored"
+            />
+        </DataProvider>
     );
 }
 
