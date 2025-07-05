@@ -11,7 +11,6 @@ import {
 import { useAuth } from '../../context/AuthContext';
 
 const Navigation = ({ activeSection, setActiveSection }) => {
-  // Obtenemos el usuario y la función de logout desde el contexto de autenticación
   const { user, logout } = useAuth();
 
   const navItems = [
@@ -27,9 +26,7 @@ const Navigation = ({ activeSection, setActiveSection }) => {
 
   return (
     <aside className="w-64 bg-white h-screen p-4 fixed top-0 left-0 border-r flex flex-col">
-      {/* Contenedor principal que permite la distribución vertical */}
       <div className="flex flex-col justify-between h-full">
-        {/* Sección Superior: Logo y Navegación */}
         <div>
           <div className="mb-8 p-2">
             <h1 className="text-2xl font-bold text-gray-800 text-center">Asistente de Hogar</h1>
@@ -53,11 +50,11 @@ const Navigation = ({ activeSection, setActiveSection }) => {
           </nav>
         </div>
 
-        {/* Sección Inferior: Información del Usuario y Logout */}
         <div className="border-t pt-4">
             <div className="flex items-center gap-3 p-2 mb-3">
                 <FaUserCircle className="text-gray-500" size={24} />
-                <span className="font-medium text-gray-700">{user?.name || 'Usuario'}</span>
+                {/* CORRECCIÓN: Nos aseguramos de que user y user.name existan antes de mostrarlos */}
+                <span className="font-medium text-gray-700 truncate">{user && user.name ? user.name : 'Usuario'}</span>
             </div>
           <button
             onClick={logout}
