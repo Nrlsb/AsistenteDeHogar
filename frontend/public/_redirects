@@ -1,5 +1,0 @@
-# Regla para reenviar las llamadas a la API hacia el backend en Render
-/api/* https://asistentedehogarapi.onrender.com/api/:splat    200
-
-# Regla para que la aplicación de una sola página (React) funcione correctamente
-/* /index.html    200
