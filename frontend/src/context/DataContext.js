@@ -1,7 +1,7 @@
 // frontend/src/context/DataContext.js
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import apiService from '../services/apiService';
-import { useAuth } from './AuthContext'; // CORRECCIÓN: Importamos el hook 'useAuth'
+import { useAuth } from './AuthContext';
 import { toast } from 'react-toastify';
 
 export const DataContext = createContext();
@@ -9,7 +9,7 @@ export const DataContext = createContext();
 export const useData = () => useContext(DataContext);
 
 export const DataProvider = ({ children }) => {
-  const { user } = useAuth(); // CORRECCIÓN: Usamos el hook para acceder al contexto
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
 
   // Estados para cada sección
@@ -19,6 +19,31 @@ export const DataProvider = ({ children }) => {
   const [meals, setMeals] = useState({
     lunes: '', martes: '', miercoles: '', jueves: '', viernes: '', sabado: '', domingo: ''
   });
+
+  // --- NUEVO: Estado para el Modal de Confirmación Global ---
+  const [modal, setModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+  });
+
+  const openModal = ({ title, message, onConfirm }) => {
+    setModal({
+      isOpen: true,
+      title,
+      message,
+      onConfirm: () => {
+        onConfirm();
+        closeModal();
+      },
+    });
+  };
+
+  const closeModal = () => {
+    setModal({ isOpen: false, title: '', message: '', onConfirm: () => {} });
+  };
+
 
   useEffect(() => {
     const fetchData = async () => {
@@ -56,6 +81,7 @@ export const DataProvider = ({ children }) => {
     fetchData();
   }, [user]);
 
+  // (Aquí van todas las demás funciones: addTask, addShoppingList, etc. No las incluyo por brevedad, no necesitan cambios)
   // --- Funciones de Tareas ---
   const addTask = async (taskData) => {
     try {
@@ -201,6 +227,7 @@ export const DataProvider = ({ children }) => {
     }
   };
 
+
   return (
     <DataContext.Provider
       value={{
@@ -221,6 +248,10 @@ export const DataProvider = ({ children }) => {
         deleteExpense,
         meals,
         saveMeals,
+        // --- NUEVO: Exportamos las funciones y el estado del modal ---
+        modal,
+        openModal,
+        closeModal,
       }}
     >
       {children}
