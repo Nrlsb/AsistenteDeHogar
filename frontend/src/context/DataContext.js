@@ -1,260 +1,246 @@
-// frontend/src/context/DataContext.js
-import React, { createContext, useState, useContext, useEffect } from 'react';
-import apiService from '../services/apiService';
+import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
+import api from '../services/apiService'; // Cambiado a importación por defecto
 import { useAuth } from './AuthContext';
 import { toast } from 'react-toastify';
 
-export const DataContext = createContext();
+const defaultDataContext = {
+    tasks: [],
+    loadingTasks: false,
+    addTask: () => {},
+    updateTask: () => {},
+    deleteTask: () => {},
+    shoppingItems: [],
+    loadingShopping: false,
+    addShoppingItem: () => {},
+    updateShoppingItem: () => {},
+    deleteShoppingItem: () => {},
+    mealPlan: null,
+    loadingMeals: false,
+    updateSingleMeal: () => {},
+    expenses: [],
+    loadingExpenses: false,
+    addExpense: () => {},
+    deleteExpense: () => {},
+    error: null,
+    modalState: { isOpen: false, title: '', message: '', onConfirm: () => {} },
+    closeModal: () => {},
+    handleConfirm: () => {},
+};
 
-export const useData = () => useContext(DataContext);
+const DataContext = createContext(defaultDataContext);
 
 export const DataProvider = ({ children }) => {
-  const { user } = useAuth();
-  const [loading, setLoading] = useState(true);
+    const { user } = useAuth();
 
-  // Estados para cada sección
-  const [tasks, setTasks] = useState([]);
-  const [shoppingLists, setShoppingLists] = useState([]);
-  const [expenses, setExpenses] = useState([]);
-  const [meals, setMeals] = useState({
-    lunes: '', martes: '', miercoles: '', jueves: '', viernes: '', sabado: '', domingo: ''
-  });
+    const [tasks, setTasks] = useState([]);
+    const [shoppingItems, setShoppingItems] = useState([]);
+    const [mealPlan, setMealPlan] = useState(null);
+    const [expenses, setExpenses] = useState([]);
+    const [loading, setLoading] = useState({ tasks: false, shopping: false, meals: false, expenses: false });
+    const [error, setError] = useState(null);
 
-  // --- NUEVO: Estado para el Modal de Confirmación Global ---
-  const [modal, setModal] = useState({
-    isOpen: false,
-    title: '',
-    message: '',
-    onConfirm: () => {},
-  });
-
-  const openModal = ({ title, message, onConfirm }) => {
-    setModal({
-      isOpen: true,
-      title,
-      message,
-      onConfirm: () => {
-        onConfirm();
-        closeModal();
-      },
+    const [modalState, setModalState] = useState({
+        isOpen: false,
+        title: '',
+        message: '',
+        onConfirm: () => {}
     });
-  };
 
-  const closeModal = () => {
-    setModal({ isOpen: false, title: '', message: '', onConfirm: () => {} });
-  };
+    const closeModal = () => setModalState({ isOpen: false, title: '', message: '', onConfirm: () => {} });
 
-
-  useEffect(() => {
-    const fetchData = async () => {
-      if (user && user.token) {
-        try {
-          setLoading(true);
-          const [tasksData, shoppingListsData, expensesData, mealsData] = await Promise.all([
-            apiService.getTasks(user.token),
-            apiService.getShoppingLists(user.token),
-            apiService.getExpenses(user.token),
-            apiService.getMeals(user.token),
-          ]);
-
-          setTasks(tasksData);
-          setShoppingLists(shoppingListsData);
-          setExpenses(expensesData);
-          if (mealsData) {
-            setMeals(mealsData);
-          }
-        } catch (error) {
-          console.error('Error fetching data:', error);
-          toast.error('Error al cargar los datos.');
-        } finally {
-          setLoading(false);
-        }
-      } else {
-        setTasks([]);
-        setShoppingLists([]);
-        setExpenses([]);
-        setMeals({ lunes: '', martes: '', miercoles: '', jueves: '', viernes: '', sabado: '', domingo: '' });
-        setLoading(false);
-      }
+    const handleConfirm = async () => {
+        await modalState.onConfirm();
+        closeModal();
     };
 
-    fetchData();
-  }, [user]);
+    const fetchTasks = useCallback(async () => {
+        if (!user) return;
+        setLoading(prev => ({ ...prev, tasks: true }));
+        try {
+            const { data } = await api.getTasks();
+            setTasks(data);
+        } catch (err) { setError('No se pudieron cargar las tareas.'); } 
+        finally { setLoading(prev => ({ ...prev, tasks: false })); }
+    }, [user]);
 
-  // (Aquí van todas las demás funciones: addTask, addShoppingList, etc. No las incluyo por brevedad, no necesitan cambios)
-  // --- Funciones de Tareas ---
-  const addTask = async (taskData) => {
-    try {
-      const newTask = await apiService.createTask(taskData, user.token);
-      setTasks([...tasks, newTask]);
-      toast.success('Tarea añadida con éxito');
-    } catch (error) {
-      toast.error('Error al añadir la tarea');
-    }
-  };
-
-  const updateTask = async (taskId, taskData) => {
-    try {
-      const updated = await apiService.updateTask(taskId, taskData, user.token);
-      setTasks(tasks.map((task) => (task._id === taskId ? updated : task)));
-      toast.success('Tarea actualizada');
-    } catch (error) {
-      toast.error('Error al actualizar la tarea');
-    }
-  };
-
-  const deleteTask = async (taskId) => {
-    try {
-      await apiService.deleteTask(taskId, user.token);
-      setTasks(tasks.filter((task) => task._id !== taskId));
-      toast.success('Tarea eliminada');
-    } catch (error) {
-      toast.error('Error al eliminar la tarea');
-    }
-  };
-
-  // --- Funciones de Listas de Compras ---
-  const addShoppingList = async (listName) => {
-    try {
-      const newList = await apiService.createShoppingList({ name: listName }, user.token);
-      setShoppingLists([...shoppingLists, newList]);
-      toast.success(`Lista "${listName}" creada con éxito`);
-    } catch (error) {
-      toast.error('Error al crear la lista de compras');
-    }
-  };
-
-  const deleteShoppingList = async (listId) => {
-    try {
-        await apiService.deleteShoppingList(listId, user.token);
-        setShoppingLists(shoppingLists.filter(list => list._id !== listId));
-        toast.success('Lista de compras eliminada');
-    } catch (error) {
-        toast.error('Error al eliminar la lista');
-    }
-  };
-
-  const shareShoppingList = async (listId, email) => {
-    try {
-        const updatedList = await apiService.shareShoppingList(listId, email, user.token);
-        setShoppingLists(shoppingLists.map(list => list._id === listId ? updatedList : list));
-        toast.success(`Lista compartida con ${email}`);
-    } catch (error) {
-        toast.error(error.response?.data?.message || 'Error al compartir la lista');
-    }
-  };
-
-  // --- Funciones de Artículos de Compra ---
-  const addShoppingItem = async (listId, itemData) => {
-    try {
-        const { newItem } = await apiService.addShoppingItemToList(listId, itemData, user.token);
-        const updatedLists = shoppingLists.map(list => {
-            if (list._id === listId) {
-                return { ...list, items: [...list.items, newItem] };
+    const addTask = async (taskData) => {
+        try {
+            const { data } = await api.addTask(taskData);
+            setTasks(prev => [...prev, data]);
+            toast.success('¡Tarea añadida con éxito!');
+        } catch (err) { 
+            toast.error('Error al añadir la tarea.');
+        }
+    };
+    const updateTask = async (id, taskData) => {
+        try {
+            const { data } = await api.updateTask(id, taskData);
+            setTasks(prev => prev.map(t => (t._id === id ? data : t)));
+            if (taskData.description) {
+                toast.success('Tarea actualizada.');
             }
-            return list;
-        });
-        setShoppingLists(updatedLists);
-        toast.success('Artículo añadido');
-    } catch (error) {
-        toast.error('Error al añadir el artículo');
-    }
-  };
+        } catch (err) { 
+            toast.error('Error al actualizar la tarea.');
+        }
+    };
 
-  const updateShoppingItem = async (listId, itemId, itemData) => {
-    try {
-        const { updatedItem } = await apiService.updateShoppingItemInList(listId, itemId, itemData, user.token);
-        const updatedLists = shoppingLists.map(list => {
-            if (list._id === listId) {
-                return {
-                    ...list,
-                    items: list.items.map(item => item._id === itemId ? updatedItem : item)
-                };
+    const deleteTask = (id) => {
+        setModalState({
+            isOpen: true,
+            title: 'Eliminar Tarea',
+            message: '¿Estás seguro de que deseas eliminar esta tarea? Esta acción no se puede deshacer.',
+            onConfirm: async () => {
+                try {
+                    await api.deleteTask(id);
+                    setTasks(prev => prev.filter(t => t._id !== id));
+                    toast.info('Tarea eliminada.');
+                } catch (err) {
+                    toast.error('Error al eliminar la tarea.');
+                }
             }
-            return list;
         });
-        setShoppingLists(updatedLists);
-        toast.success('Artículo actualizado');
-    } catch (error) {
-        toast.error('Error al actualizar el artículo');
-    }
-  };
+    };
 
-  const deleteShoppingItem = async (listId, itemId) => {
-    try {
-        await apiService.deleteShoppingItemFromList(listId, itemId, user.token);
-        const updatedLists = shoppingLists.map(list => {
-            if (list._id === listId) {
-                return { ...list, items: list.items.filter(item => item._id !== itemId) };
+    const fetchShoppingItems = useCallback(async () => {
+        if (!user) return;
+        setLoading(prev => ({ ...prev, shopping: true }));
+        try {
+            const { data } = await api.getShoppingItems();
+            setShoppingItems(data);
+        } catch (err) { setError('No se pudieron cargar los artículos de compra.'); }
+        finally { setLoading(prev => ({ ...prev, shopping: false })); }
+    }, [user]);
+
+    const addShoppingItem = async (itemData) => {
+        try {
+            const { data } = await api.addShoppingItem(itemData);
+            setShoppingItems(prev => [...prev, data]);
+            toast.success('¡Artículo añadido a la lista!');
+        } catch (err) { 
+            toast.error('Error al añadir el artículo.');
+        }
+    };
+
+    const updateShoppingItem = async (id, itemData) => {
+        try {
+            const { data } = await api.updateShoppingItem(id, itemData);
+            setShoppingItems(prev => prev.map(i => (i._id === id ? data : i)));
+            if (itemData.name) {
+                toast.success('Artículo actualizado.');
             }
-            return list;
+        } catch (err) { 
+            toast.error('Error al actualizar el artículo.');
+        }
+    };
+
+    const deleteShoppingItem = (id) => {
+        setModalState({
+            isOpen: true,
+            title: 'Eliminar Artículo',
+            message: '¿Estás seguro de que deseas eliminar este artículo de la lista? Esta acción no se puede deshacer.',
+            onConfirm: async () => {
+                try {
+                    await api.deleteShoppingItem(id);
+                    setShoppingItems(prev => prev.filter(i => i._id !== id));
+                    toast.info('Artículo eliminado.');
+                } catch (err) {
+                    toast.error('Error al eliminar el artículo.');
+                }
+            }
         });
-        setShoppingLists(updatedLists);
-        toast.success('Artículo eliminado');
-    } catch (error) {
-        toast.error('Error al eliminar el artículo');
-    }
-  };
+    };
 
-  // --- Funciones de Gastos y Comidas ---
-  const addExpense = async (expenseData) => {
-    try {
-      const newExpense = await apiService.createExpense(expenseData, user.token);
-      setExpenses([...expenses, newExpense]);
-      toast.success('Gasto añadido con éxito');
-    } catch (error) {
-      toast.error('Error al añadir el gasto');
-    }
-  };
+    const fetchMealPlan = useCallback(async () => {
+        if (!user) return;
+        setLoading(prev => ({ ...prev, meals: true }));
+        try {
+            const { data } = await api.getMealPlan();
+            setMealPlan(data);
+        } catch (err) { 
+            setError('No se pudo cargar el plan de comidas.');
+            console.error(err);
+        }
+        finally { setLoading(prev => ({ ...prev, meals: false })); }
+    }, [user]);
 
-  const deleteExpense = async (expenseId) => {
-    try {
-      await apiService.deleteExpense(expenseId, user.token);
-      setExpenses(expenses.filter((expense) => expense._id !== expenseId));
-      toast.success('Gasto eliminado');
-    } catch (error) {
-      toast.error('Error al eliminar el gasto');
-    }
-  };
+    const updateSingleMeal = async (day, mealType, value) => {
+        if (!mealPlan) return;
+        const newMealPlan = { ...mealPlan, [day]: { ...mealPlan[day], [mealType]: value }};
+        try {
+            setMealPlan(newMealPlan); 
+            await api.updateMealPlan(newMealPlan);
+            toast.success('Plan de comidas actualizado.');
+        } catch (err) {
+            toast.error('Error al actualizar la comida.');
+            console.error(err);
+            fetchMealPlan();
+        }
+    };
 
-  const saveMeals = async (mealsData) => {
-    try {
-      const updatedMeals = await apiService.saveMeals(mealsData, user.token);
-      setMeals(updatedMeals);
-      toast.success('Plan de comidas guardado');
-    } catch (error) {
-      toast.error('Error al guardar el plan de comidas');
-    }
-  };
+    const fetchExpenses = useCallback(async () => {
+        if (!user) return;
+        setLoading(prev => ({ ...prev, expenses: true }));
+        try {
+            const { data } = await api.getExpenses();
+            setExpenses(data);
+        } catch (err) { setError('No se pudieron cargar los gastos.'); }
+        finally { setLoading(prev => ({ ...prev, expenses: false })); }
+    }, [user]);
 
+    const addExpense = async (expenseData) => {
+        try {
+            const { data } = await api.addExpense(expenseData);
+            setExpenses(prev => [...prev, data].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
+            toast.success('¡Gasto añadido con éxito!');
+        } catch (err) { 
+            toast.error('Error al añadir el gasto.');
+        }
+    };
 
-  return (
-    <DataContext.Provider
-      value={{
-        loading,
-        tasks,
-        addTask,
-        updateTask,
-        deleteTask,
-        shoppingLists,
-        addShoppingList,
-        deleteShoppingList,
-        shareShoppingList,
-        addShoppingItem,
-        updateShoppingItem,
-        deleteShoppingItem,
-        expenses,
-        addExpense,
-        deleteExpense,
-        meals,
-        saveMeals,
-        // --- NUEVO: Exportamos las funciones y el estado del modal ---
-        modal,
-        openModal,
+    const deleteExpense = (id) => {
+        setModalState({
+            isOpen: true,
+            title: 'Eliminar Gasto',
+            message: '¿Estás seguro de que deseas eliminar este gasto? Esta acción no se puede deshacer.',
+            onConfirm: async () => {
+                try {
+                    await api.deleteExpense(id);
+                    setExpenses(prev => prev.filter(e => e._id !== id));
+                    toast.info('Gasto eliminado.');
+                } catch (err) {
+                    toast.error('Error al eliminar el gasto.');
+                }
+            }
+        });
+    };
+
+    useEffect(() => {
+        if (user) {
+            fetchTasks();
+            fetchShoppingItems();
+            fetchMealPlan();
+            fetchExpenses();
+        }
+    }, [user, fetchTasks, fetchShoppingItems, fetchMealPlan, fetchExpenses]);
+
+    const value = {
+        tasks, loadingTasks: loading.tasks, addTask, updateTask, deleteTask,
+        shoppingItems, loadingShopping: loading.shopping, addShoppingItem, updateShoppingItem, deleteShoppingItem,
+        mealPlan, loadingMeals: loading.meals, updateSingleMeal,
+        expenses, loadingExpenses: loading.expenses, addExpense, deleteExpense,
+        error,
+        modalState,
         closeModal,
-      }}
-    >
-      {children}
-    </DataContext.Provider>
-  );
+        handleConfirm
+    };
+
+    return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
+};
+
+export const useData = () => {
+    const context = useContext(DataContext);
+    if (context === undefined) {
+        throw new Error('useData debe ser usado dentro de un DataProvider');
+    }
+    return context;
 };
