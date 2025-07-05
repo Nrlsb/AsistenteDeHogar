@@ -27,7 +27,6 @@ const defaultDataContext = {
     handleConfirm: () => {},
 };
 
-// --- CORRECCIÓN ---
 // Exportamos el contexto directamente para resolver el error de build en Netlify.
 export const DataContext = createContext(defaultDataContext);
 

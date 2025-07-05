@@ -1,6 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import * as api from '../services/apiService';
-import { toast } from 'react-toastify'; // Importamos toast para las notificaciones
+import api from '../services/apiService'; // Cambiado a importación por defecto
+import { toast } from 'react-toastify';
 
 const defaultAuthContext = {
     user: null,
@@ -10,7 +10,7 @@ const defaultAuthContext = {
     logout: () => {},
     loading: true,
     error: null,
-    setError: () => {}, // Añadimos setError al contexto por defecto
+    setError: () => {},
 };
 
 const AuthContext = createContext(defaultAuthContext);
@@ -29,7 +29,6 @@ export const AuthProvider = ({ children }) => {
                     setUser(data);
                 } catch (err) {
                     console.error("Error de autenticación, token inválido.");
-                    // Limpiamos el estado si el token no es válido
                     localStorage.removeItem('token');
                     setToken(null);
                     setUser(null);
@@ -43,15 +42,14 @@ export const AuthProvider = ({ children }) => {
     const login = async (userData) => {
         try {
             const { data } = await api.login(userData);
-            // La única responsabilidad de login es obtener y establecer el token.
             localStorage.setItem('token', data.token);
-            setToken(data.token); // Esto activará el useEffect para obtener los datos del usuario
+            setToken(data.token);
             setError(null);
             toast.success('¡Bienvenido de nuevo!');
         } catch (err) {
             const errorMessage = err.response?.data?.message || 'Error al iniciar sesión';
             setError(errorMessage);
-            toast.error(errorMessage); // Mostramos el error con una notificación
+            toast.error(errorMessage);
             throw err;
         }
     };
@@ -78,9 +76,6 @@ export const AuthProvider = ({ children }) => {
         toast.info('Has cerrado sesión.');
     };
 
-    // --- CORRECCIÓN ---
-    // Se añade 'setError' al objeto 'value' para que esté disponible
-    // en los componentes que usen el hook 'useAuth'.
     const value = { user, token, login, register, logout, loading, error, setError };
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
