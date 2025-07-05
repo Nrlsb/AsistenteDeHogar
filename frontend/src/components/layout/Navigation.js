@@ -1,16 +1,16 @@
 import React from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+// Se eliminan las importaciones de 'react-router-dom' para evitar conflictos.
 import { useAuth } from '../../context/AuthContext';
 import { FaTasks, FaShoppingCart, FaUtensils, FaChartLine, FaSignOutAlt, FaUserCircle } from 'react-icons/fa';
 
-const Navigation = ({ onNavigate }) => {
-    // 1. Obtenemos el objeto 'user' desde el contexto de autenticación.
+// El componente ahora recibe 'activeSection' para saber qué botón resaltar.
+const Navigation = ({ onNavigate, activeSection }) => {
     const { user, logout } = useAuth();
-    const location = useLocation();
 
-    const getLinkClass = (path) => {
-        const isActive = location.pathname === path;
-        return `flex items-center p-3 my-1 text-lg rounded-lg transition-colors ${
+    // La función ahora compara el nombre de la sección, no una ruta de URL.
+    const getLinkClass = (section) => {
+        const isActive = activeSection === section;
+        return `flex items-center p-3 my-1 text-lg rounded-lg transition-colors w-full text-left ${
             isActive
                 ? 'bg-blue-600 text-white shadow-md'
                 : 'text-gray-700 hover:bg-blue-100 hover:text-blue-700'
@@ -23,17 +23,18 @@ const Navigation = ({ onNavigate }) => {
                 <h1 className="text-3xl font-bold text-center mb-8 text-gray-800">Asistente de Hogar</h1>
                 <nav>
                     <ul>
-                        <li><NavLink to="/" className={getLinkClass('/')} onClick={() => onNavigate('tasks')}><FaTasks className="mr-3" /> Tareas</NavLink></li>
-                        <li><NavLink to="/shopping" className={getLinkClass('/shopping')} onClick={() => onNavigate('shopping')}><FaShoppingCart className="mr-3" /> Compras</NavLink></li>
-                        <li><NavLink to="/expenses" className={getLinkClass('/expenses')} onClick={() => onNavigate('expenses')}><FaChartLine className="mr-3" /> Gastos</NavLink></li>
-                        <li><NavLink to="/meals" className={getLinkClass('/meals')} onClick={() => onNavigate('meals')}><FaUtensils className="mr-3" /> Comidas</NavLink></li>
+                        {/* Se reemplazan los 'NavLink' por 'button' para un manejo de estado más simple. */}
+                        <li><button onClick={() => onNavigate('tasks')} className={getLinkClass('tasks')}><FaTasks className="mr-3" /> Tareas</button></li>
+                        <li><button onClick={() => onNavigate('shopping')} className={getLinkClass('shopping')}><FaShoppingCart className="mr-3" /> Compras</button></li>
+                        <li><button onClick={() => onNavigate('expenses')} className={getLinkClass('expenses')}><FaChartLine className="mr-3" /> Gastos</button></li>
+                        <li><button onClick={() => onNavigate('meals')} className={getLinkClass('meals')}><FaUtensils className="mr-3" /> Comidas</button></li>
                     </ul>
                 </nav>
             </div>
             <div className="border-t pt-4">
                 <ul>
                     <li>
-                        {/* 2. Mostramos el nombre del usuario. Si aún no ha cargado, se muestra un texto temporal. */}
+                        {/* El nombre del usuario ahora debería mostrarse correctamente. */}
                         <div className="flex items-center p-3 text-lg text-gray-700">
                             <FaUserCircle className="mr-3 text-xl" />
                             <span className="font-semibold">{user ? user.name : 'Cargando...'}</span>

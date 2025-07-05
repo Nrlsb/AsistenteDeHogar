@@ -1,83 +1,77 @@
-// frontend/src/App.js
-import { Routes, Route, Navigate } from 'react-router-dom';
-import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import React, { useState } from 'react';
+import { BrowserRouter as Router } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
-import Spinner from './components/common/Spinner';
-import ConfirmationModal from './components/common/ConfirmationModal';
-import { useData } from './context/DataContext';
+import { DataProvider } from './context/DataContext';
 import AuthScreen from './components/auth/AuthScreen';
+import Navigation from './components/layout/Navigation';
 import TasksSection from './components/sections/TasksSection';
 import ShoppingSection from './components/sections/ShoppingSection';
-import ExpensesSection from './components/sections/ExpensesSection';
 import MealsSection from './components/sections/MealsSection';
-import Navigation from './components/layout/Navigation';
-import { useState } from 'react';
+import ExpensesSection from './components/sections/ExpensesSection';
+import ConfirmationModal from './components/common/ConfirmationModal';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 function App() {
-  const { user, loading: authLoading } = useAuth();
-  const { loading: dataLoading, modal, closeModal } = useData() || {};
-  const [activeSection, setActiveSection] = useState('tasks');
+    const { user, loading } = useAuth();
+    const [activeSection, setActiveSection] = useState('tasks');
 
-  const renderSection = () => {
-    switch (activeSection) {
-      case 'tasks':
-        return <TasksSection />;
-      case 'shopping':
-        return <ShoppingSection />;
-      case 'expenses':
-        return <ExpensesSection />;
-      case 'meals':
-        return <MealsSection />;
-      default:
-        return <TasksSection />;
+    if (loading) {
+        return <div className="flex justify-center items-center h-screen">Cargando...</div>;
     }
-  };
 
-  if (authLoading) {
-    return <Spinner />;
-  }
+    const renderSection = () => {
+        switch (activeSection) {
+            case 'tasks':
+                return <TasksSection />;
+            case 'shopping':
+                return <ShoppingSection />;
+            case 'meals':
+                return <MealsSection />;
+            case 'expenses':
+                return <ExpensesSection />;
+            default:
+                return <TasksSection />;
+        }
+    };
 
-  return (
-    <>
-      <div className="min-h-screen bg-gray-50 font-sans">
-        <Routes>
-          <Route
-            path="/"
-            element={
-              user ? (
-                // El div principal ya no necesita ser flex, la navegación es fija
-                <div>
-                  <Navigation
-                    activeSection={activeSection}
-                    setActiveSection={setActiveSection}
-                  />
-                  {/* CORRECCIÓN: El contenido principal ahora tiene un margen a la izquierda para no superponerse con la barra de navegación */}
-                  <main className="ml-64 p-6">
-                    {renderSection()}
-                  </main>
+    return (
+        <Router>
+            <DataProvider>
+                <div className="flex h-screen bg-gray-100">
+                    {user ? (
+                        <>
+                            <div className="w-64 flex-shrink-0">
+                                {/* --- CORRECCIÓN --- 
+                                    Se pasa la prop 'activeSection' al componente Navigation 
+                                    para que pueda resaltar la sección activa correctamente. 
+                                */}
+                                <Navigation onNavigate={setActiveSection} activeSection={activeSection} />
+                            </div>
+                            <main className="flex-1 p-6 overflow-y-auto">
+                                {renderSection()}
+                            </main>
+                        </>
+                    ) : (
+                        <AuthScreen />
+                    )}
                 </div>
-              ) : (
-                <Navigate to="/auth" />
-              )
-            }
-          />
-          <Route path="/auth" element={!user ? <AuthScreen /> : <Navigate to="/" />} />
-        </Routes>
-      </div>
-      <ToastContainer autoClose={3000} hideProgressBar />
-      {modal && modal.isOpen && (
-        <ConfirmationModal
-          isOpen={modal.isOpen}
-          onClose={closeModal}
-          onConfirm={modal.onConfirm}
-          title={modal.title}
-          message={modal.message}
-        />
-      )}
-      {(authLoading || dataLoading) && <Spinner />}
-    </>
-  );
+                <ConfirmationModal />
+                <ToastContainer
+                    position="bottom-right"
+                    autoClose={4000}
+                    hideProgressBar={false}
+                    newestOnTop={false}
+                    closeOnClick
+                    rtl={false}
+                    pauseOnFocusLoss
+                    draggable
+                    pauseOnHover
+                    theme="colored"
+                />
+            </DataProvider>
+        </Router>
+    );
 }
 
 export default App;
