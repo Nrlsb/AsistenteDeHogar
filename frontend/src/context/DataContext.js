@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
-import api from '../services/apiService'; // Cambiado a importación por defecto
+import api from '../services/apiService'; // Importación por defecto
 import { useAuth } from './AuthContext';
 import { toast } from 'react-toastify';
 
@@ -27,7 +27,9 @@ const defaultDataContext = {
     handleConfirm: () => {},
 };
 
-const DataContext = createContext(defaultDataContext);
+// --- CORRECCIÓN ---
+// Exportamos el contexto directamente para resolver el error de build en Netlify.
+export const DataContext = createContext(defaultDataContext);
 
 export const DataProvider = ({ children }) => {
     const { user } = useAuth();
