@@ -1,27 +1,9 @@
 # netlify.toml
 
-# Configuración de construcción para el frontend
+# Configuración de construcción para el frontend.
+# Netlify ejecutará 'npm run build' desde la carpeta 'frontend'
+# y publicará el contenido de la carpeta 'frontend/build'.
 [build]
-  # Comando para construir el proyecto de React
   command = "npm run build"
-  # CORRECCIÓN: La carpeta de publicación es 'build', relativa al directorio base.
   publish = "build"
-  # Directorio base desde donde se ejecuta el comando de construcción
   base = "frontend"
-
-# Regla de redirección para la API (Proxy)
-[[redirects]]
-  # Captura cualquier petición que comience con /api/
-  from = "/api/*"
-  # Reenvía la petición a tu backend en Render.
-  to = "https://asistentedehogarapi.onrender.com/api/:splat"
-  # Estado 200 para que funcione como un proxy y no una redirección visible
-  status = 200
-  # Forzar la regla para que se aplique siempre
-  force = true
-
-# Regla para aplicaciones de una sola página (Single Page Application)
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
