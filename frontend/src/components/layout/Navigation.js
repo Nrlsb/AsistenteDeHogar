@@ -1,72 +1,54 @@
-// frontend/src/components/layout/Navigation.js
 import React from 'react';
-import {
-  FaTasks,
-  FaShoppingCart,
-  FaChartLine,
-  FaUtensils,
-  FaSignOutAlt,
-  FaUserCircle,
-} from 'react-icons/fa';
+import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { FaTasks, FaShoppingCart, FaUtensils, FaChartLine, FaSignOutAlt, FaUserCircle } from 'react-icons/fa';
 
-const Navigation = ({ activeSection, setActiveSection }) => {
-  const { user, logout } = useAuth();
+const Navigation = ({ onNavigate }) => {
+    // 1. Obtenemos el objeto 'user' desde el contexto de autenticación.
+    const { user, logout } = useAuth();
+    const location = useLocation();
 
-  const navItems = [
-    { id: 'tasks', label: 'Tareas', icon: <FaTasks /> },
-    { id: 'shopping', label: 'Compras', icon: <FaShoppingCart /> },
-    { id: 'expenses', label: 'Gastos', icon: <FaChartLine /> },
-    { id: 'meals', label: 'Comidas', icon: <FaUtensils /> },
-  ];
+    const getLinkClass = (path) => {
+        const isActive = location.pathname === path;
+        return `flex items-center p-3 my-1 text-lg rounded-lg transition-colors ${
+            isActive
+                ? 'bg-blue-600 text-white shadow-md'
+                : 'text-gray-700 hover:bg-blue-100 hover:text-blue-700'
+        }`;
+    };
 
-  const baseClasses = "flex items-center gap-4 px-4 py-3 rounded-lg transition-all duration-200 cursor-pointer text-md";
-  const activeClasses = "bg-blue-500 text-white shadow-md font-semibold";
-  const inactiveClasses = "text-gray-600 hover:bg-gray-200 hover:text-gray-800";
-
-  return (
-    <aside className="w-64 bg-white h-screen p-4 fixed top-0 left-0 border-r flex flex-col">
-      <div className="flex flex-col justify-between h-full">
-        <div>
-          <div className="mb-8 p-2">
-            <h1 className="text-2xl font-bold text-gray-800 text-center">Asistente de Hogar</h1>
-          </div>
-          <nav>
-            <ul className="space-y-2">
-              {navItems.map((item) => (
-                <li key={item.id}>
-                  <button
-                    onClick={() => setActiveSection(item.id)}
-                    className={`${baseClasses} w-full text-left ${
-                      activeSection === item.id ? activeClasses : inactiveClasses
-                    }`}
-                  >
-                    {item.icon}
-                    <span>{item.label}</span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </nav>
-        </div>
-
-        <div className="border-t pt-4">
-            <div className="flex items-center gap-3 p-2 mb-3">
-                <FaUserCircle className="text-gray-500" size={24} />
-                {/* CORRECCIÓN: Nos aseguramos de que user y user.name existan antes de mostrarlos */}
-                <span className="font-medium text-gray-700 truncate">{user && user.name ? user.name : 'Usuario'}</span>
+    return (
+        <div className="h-full bg-white shadow-lg flex flex-col justify-between p-4">
+            <div>
+                <h1 className="text-3xl font-bold text-center mb-8 text-gray-800">Asistente de Hogar</h1>
+                <nav>
+                    <ul>
+                        <li><NavLink to="/" className={getLinkClass('/')} onClick={() => onNavigate('tasks')}><FaTasks className="mr-3" /> Tareas</NavLink></li>
+                        <li><NavLink to="/shopping" className={getLinkClass('/shopping')} onClick={() => onNavigate('shopping')}><FaShoppingCart className="mr-3" /> Compras</NavLink></li>
+                        <li><NavLink to="/expenses" className={getLinkClass('/expenses')} onClick={() => onNavigate('expenses')}><FaChartLine className="mr-3" /> Gastos</NavLink></li>
+                        <li><NavLink to="/meals" className={getLinkClass('/meals')} onClick={() => onNavigate('meals')}><FaUtensils className="mr-3" /> Comidas</NavLink></li>
+                    </ul>
+                </nav>
             </div>
-          <button
-            onClick={logout}
-            className={`${baseClasses} w-full text-left text-red-500 hover:bg-red-100`}
-          >
-            <FaSignOutAlt />
-            <span>Cerrar Sesión</span>
-          </button>
+            <div className="border-t pt-4">
+                <ul>
+                    <li>
+                        {/* 2. Mostramos el nombre del usuario. Si aún no ha cargado, se muestra un texto temporal. */}
+                        <div className="flex items-center p-3 text-lg text-gray-700">
+                            <FaUserCircle className="mr-3 text-xl" />
+                            <span className="font-semibold">{user ? user.name : 'Cargando...'}</span>
+                        </div>
+                    </li>
+                    <li>
+                        <button onClick={logout} className="flex items-center p-3 my-1 text-lg text-red-600 hover:bg-red-100 rounded-lg w-full transition-colors">
+                            <FaSignOutAlt className="mr-3" />
+                            Cerrar Sesión
+                        </button>
+                    </li>
+                </ul>
+            </div>
         </div>
-      </div>
-    </aside>
-  );
+    );
 };
 
 export default Navigation;
