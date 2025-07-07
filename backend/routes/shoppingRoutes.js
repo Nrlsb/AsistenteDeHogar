@@ -1,74 +1,47 @@
-const express = require('express');
+// CORRECCIÓN: Se usa import en lugar de require
+import express from 'express';
+import ShoppingItem from '../models/shoppingModels.js';
+import { protect } from '../middleware/authMiddleware.js';
+
 const router = express.Router();
-const { protect } = require('../middleware/authMiddleware');
-// Se corrige la importación para desestructurar los modelos correctamente
-const { ShoppingItem, ShoppingCategory } = require('../models/shoppingModels');
 
-// @route   GET /api/shopping
-// @desc    Obtener todos los artículos de compra
+// Get all shopping items
 router.get('/', protect, async (req, res) => {
-    try {
-        const items = await ShoppingItem.find({ user: req.user.id });
-        res.json(items);
-    } catch (err) {
-        console.error('ERROR AL OBTENER ARTÍCULOS DE COMPRA:', err);
-        res.status(500).send('Error del Servidor');
-    }
+    const items = await ShoppingItem.find({ user: req.user.id });
+    res.json(items);
 });
 
-// @route   POST /api/shopping
-// @desc    Añadir un nuevo artículo
+// Add a shopping item
 router.post('/', protect, async (req, res) => {
-    const { name } = req.body;
-    try {
-        const newItem = new ShoppingItem({
-            user: req.user.id,
-            name
-        });
-        const item = await newItem.save();
-        res.json(item);
-    } catch (err) {
-        // Log del error completo para depuración en Render
-        console.error('ERROR AL AÑADIR ARTÍCULO DE COMPRA:', err);
-        res.status(500).send('Error del Servidor');
-    }
+    const { name, category } = req.body;
+    const item = new ShoppingItem({ name, category, user: req.user.id });
+    const createdItem = await item.save();
+    res.status(201).json(createdItem);
 });
 
-// @route   PUT /api/shopping/:id
-// @desc    Actualizar un artículo
+// Update a shopping item
 router.put('/:id', protect, async (req, res) => {
-    try {
-        let item = await ShoppingItem.findById(req.params.id);
-        if (!item) return res.status(404).json({ msg: 'Artículo no encontrado' });
-        if (item.user.toString() !== req.user.id) {
-            return res.status(401).json({ msg: 'No autorizado' });
-        }
-        item = await ShoppingItem.findByIdAndUpdate(req.params.id, { $set: req.body }, { new: true });
-        res.json(item);
-    } catch (err) {
-        console.error('ERROR AL ACTUALIZAR ARTÍCULO DE COMPRA:', err);
-        res.status(500).send('Error del Servidor');
+    const item = await ShoppingItem.findById(req.params.id);
+    if (item && item.user.toString() === req.user.id) {
+        item.name = req.body.name || item.name;
+        item.completed = req.body.completed !== undefined ? req.body.completed : item.completed;
+        const updatedItem = await item.save();
+        res.json(updatedItem);
+    } else {
+        res.status(404).json({ message: 'Artículo no encontrado o no autorizado' });
     }
 });
 
-// @route   DELETE /api/shopping/:id
-// @desc    Eliminar un artículo
+// Delete a shopping item
 router.delete('/:id', protect, async (req, res) => {
-    try {
-        let item = await ShoppingItem.findById(req.params.id);
-        if (!item) return res.status(404).json({ msg: 'Artículo no encontrado' });
-        if (item.user.toString() !== req.user.id) {
-            return res.status(401).json({ msg: 'No autorizado' });
-        }
-        await ShoppingItem.findByIdAndDelete(req.params.id);
-        res.json({ msg: 'Artículo eliminado' });
-    } catch (err) {
-        console.error('ERROR AL ELIMINAR ARTÍCULO DE COMPRA:', err);
-        res.status(500).send('Error del Servidor');
+    const item = await ShoppingItem.findById(req.params.id);
+    if (item && item.user.toString() === req.user.id) {
+        await ShoppingItem.deleteOne({ _id: req.params.id });
+        res.json({ message: 'Artículo eliminado' });
+    } else {
+        res.status(404).json({ message: 'Artículo no encontrado o no autorizado' });
     }
 });
 
-// Aquí podríamos añadir rutas para las categorías en el futuro
-// router.post('/categories', protect, ...);
-
-module.exports = router;
+// CORRECCIÓN: Se usa export default
+export default router;

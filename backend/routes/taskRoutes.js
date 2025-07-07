@@ -1,84 +1,64 @@
-const express = require('express');
+// CORRECCIÓN: Se usa import en lugar de require
+import express from 'express';
+import Task from '../models/taskModel.js';
+import { protect } from '../middleware/authMiddleware.js';
+
 const router = express.Router();
-const asyncHandler = require('express-async-handler');
-const Task = require('../models/taskModel');
-const { protect } = require('../middleware/authMiddleware');
 
-// @desc    Obtener todas las tareas del usuario
-// @route   GET /api/tasks
-// @access  Private
-const getTasks = asyncHandler(async (req, res) => {
-    const tasks = await Task.find({ user: req.user.id }).sort({ createdAt: -1 });
-    res.json(tasks);
+// Get all tasks for a user
+router.get('/', protect, async (req, res) => {
+    try {
+        const tasks = await Task.find({ user: req.user.id });
+        res.json(tasks);
+    } catch (error) {
+        res.status(500).json({ message: 'Error al obtener las tareas' });
+    }
 });
 
-// @desc    Añadir una nueva tarea
-// @route   POST /api/tasks
-// @access  Private
-const addTask = asyncHandler(async (req, res) => {
-    const { description, dueDate } = req.body; // Extraemos dueDate
-
-    if (!description) {
-        res.status(400);
-        throw new Error('Por favor, añade una descripción');
+// Create a task
+router.post('/', protect, async (req, res) => {
+    try {
+        const { description, dueDate } = req.body;
+        const task = new Task({ description, dueDate, user: req.user.id });
+        const createdTask = await task.save();
+        res.status(201).json(createdTask);
+    } catch (error) {
+        res.status(400).json({ message: 'Datos de tarea inválidos' });
     }
-
-    const task = await Task.create({
-        user: req.user.id,
-        description,
-        dueDate // Guardamos la fecha de vencimiento
-    });
-
-    res.status(201).json(task);
 });
 
-// @desc    Actualizar una tarea
-// @route   PUT /api/tasks/:id
-// @access  Private
-const updateTask = asyncHandler(async (req, res) => {
-    const task = await Task.findById(req.params.id);
-
-    if (!task) {
-        res.status(404);
-        throw new Error('Tarea no encontrada');
+// Update a task
+router.put('/:id', protect, async (req, res) => {
+    try {
+        const task = await Task.findById(req.params.id);
+        if (task && task.user.toString() === req.user.id) {
+            task.description = req.body.description || task.description;
+            task.completed = req.body.completed !== undefined ? req.body.completed : task.completed;
+            task.dueDate = req.body.dueDate; // Permite quitar la fecha
+            const updatedTask = await task.save();
+            res.json(updatedTask);
+        } else {
+            res.status(404).json({ message: 'Tarea no encontrada o no autorizado' });
+        }
+    } catch (error) {
+        res.status(400).json({ message: 'Error al actualizar la tarea' });
     }
-
-    if (task.user.toString() !== req.user.id) {
-        res.status(401);
-        throw new Error('No autorizado');
-    }
-
-    // Actualizamos los campos que lleguen en el body
-    task.description = req.body.description || task.description;
-    task.completed = req.body.completed !== undefined ? req.body.completed : task.completed;
-    task.dueDate = req.body.dueDate !== undefined ? req.body.dueDate : task.dueDate;
-
-    const updatedTask = await task.save();
-    res.json(updatedTask);
 });
 
-// @desc    Eliminar una tarea
-// @route   DELETE /api/tasks/:id
-// @access  Private
-const deleteTask = asyncHandler(async (req, res) => {
-    const task = await Task.findById(req.params.id);
-
-    if (!task) {
-        res.status(404);
-        throw new Error('Tarea no encontrada');
+// Delete a task
+router.delete('/:id', protect, async (req, res) => {
+    try {
+        const task = await Task.findById(req.params.id);
+        if (task && task.user.toString() === req.user.id) {
+            await Task.deleteOne({ _id: req.params.id });
+            res.json({ message: 'Tarea eliminada' });
+        } else {
+            res.status(404).json({ message: 'Tarea no encontrada o no autorizado' });
+        }
+    } catch (error) {
+        res.status(500).json({ message: 'Error al eliminar la tarea' });
     }
-
-    if (task.user.toString() !== req.user.id) {
-        res.status(401);
-        throw new Error('No autorizado');
-    }
-
-    await task.deleteOne();
-
-    res.json({ id: req.params.id });
 });
 
-router.route('/').get(protect, getTasks).post(protect, addTask);
-router.route('/:id').put(protect, updateTask).delete(protect, deleteTask);
-
-module.exports = router;
+// CORRECCIÓN: Se usa export default
+export default router;
