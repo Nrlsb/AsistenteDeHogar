@@ -5,32 +5,20 @@ const API = axios.create({
     baseURL: '/api',
 });
 
-// --- CAMBIO PRINCIPAL ---
-// Se añade un interceptor de solicitudes de Axios.
-// Esta función se ejecutará ANTES de cada llamada a la API.
-// Automáticamente tomará el token del localStorage y lo añadirá
-// a los encabezados de autorización.
+// Interceptor que añade el token de autorización a cada solicitud
 API.interceptors.request.use((config) => {
     const token = localStorage.getItem('token');
     if (token) {
-        // Si existe un token, lo adjuntamos a la cabecera de la solicitud
         config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
 }, (error) => {
-    // Manejar errores de la solicitud
     return Promise.reject(error);
 });
 
-
-// --- FUNCIONES DE API SIMPLIFICADAS ---
-// Ahora ninguna de las funciones necesita que se le pase el 'token' como argumento.
-// El interceptor se encarga de todo.
-
-// Auth
+// --- FUNCIONES DE AUTENTICACIÓN ---
 export const login = async (email, password) => {
     const { data } = await API.post('/auth/login', { email, password });
-    // Guardamos el token aquí para que el interceptor lo pueda usar en las siguientes peticiones
     if (data.token) {
         localStorage.setItem('token', data.token);
     }
@@ -39,7 +27,6 @@ export const login = async (email, password) => {
 
 export const register = async (name, email, password) => {
     const { data } = await API.post('/auth/register', { name, email, password });
-    // Guardamos el token aquí también
     if (data.token) {
         localStorage.setItem('token', data.token);
     }
@@ -51,7 +38,7 @@ export const getMe = async () => {
     return data;
 };
 
-// Tasks
+// --- FUNCIONES DE TAREAS (TASKS) ---
 export const getTasks = async () => {
     const { data } = await API.get('/tasks');
     return data;
@@ -72,7 +59,7 @@ export const deleteTask = async (id) => {
     return data;
 };
 
-// Shopping List
+// --- FUNCIONES DE LISTA DE COMPRAS (SHOPPING) ---
 export const getShoppingList = async () => {
     const { data } = await API.get('/shopping');
     return data;
@@ -93,5 +80,39 @@ export const deleteShoppingItem = async (id) => {
     return data;
 };
 
-// ... Aquí irían el resto de tus llamadas a la API (Meals, Expenses)
-// todas ellas se benefician del interceptor y no necesitan el argumento 'token'.
+// --- FUNCIONES DE PLAN DE COMIDAS (MEALS) ---
+export const getMeals = async () => {
+    const { data } = await API.get('/meals');
+    return data;
+};
+
+export const createMeal = async (mealData) => {
+    const { data } = await API.post('/meals', mealData);
+    return data;
+};
+
+export const updateMeal = async (id, mealData) => {
+    const { data } = await API.put(`/meals/${id}`, mealData);
+    return data;
+};
+
+export const deleteMeal = async (id) => {
+    const { data } = await API.delete(`/meals/${id}`);
+    return data;
+};
+
+// --- FUNCIONES DE GASTOS (EXPENSES) ---
+export const getExpenses = async () => {
+    const { data } = await API.get('/expenses');
+    return data;
+};
+
+export const createExpense = async (expenseData) => {
+    const { data } = await API.post('/expenses', expenseData);
+    return data;
+};
+
+export const deleteExpense = async (id) => {
+    const { data } = await API.delete(`/expenses/${id}`);
+    return data;
+};
