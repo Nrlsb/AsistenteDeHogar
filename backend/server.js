@@ -13,24 +13,32 @@ connectDB();
 
 const app = express();
 
-// CORS configuration to allow requests from your Netlify frontend
+// --- Updated CORS Configuration ---
 const allowedOrigins = [
   'http://localhost:3000', // For local development
   'https://asistentedehogar.onrender.com', // Your backend URL
-  'https://asistente-de-hogar.netlify.app', // Your frontend URL
+  'https://asistente-de-hogar.netlify.app', // Your production frontend URL
 ];
 
 app.use(
   cors({
     origin: function (origin, callback) {
       // Allow requests with no origin (like mobile apps or curl requests)
-      if (!origin) return callback(null, true);
-      if (allowedOrigins.indexOf(origin) === -1) {
+      if (!origin) {
+        return callback(null, true);
+      }
+
+      // Check if the origin is in the allowed list OR is a Netlify deploy preview URL
+      if (
+        allowedOrigins.indexOf(origin) !== -1 ||
+        /--asistente-hogar\.netlify\.app$/.test(origin)
+      ) {
+        callback(null, true);
+      } else {
         const msg =
           'The CORS policy for this site does not allow access from the specified Origin.';
-        return callback(new Error(msg), false);
+        callback(new Error(msg), false);
       }
-      return callback(null, true);
     },
   })
 );
@@ -51,4 +59,4 @@ app.get('/', (req, res) => {
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
