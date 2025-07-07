@@ -81,23 +81,15 @@ export const deleteShoppingItem = async (id) => {
 };
 
 // --- FUNCIONES DE PLAN DE COMIDAS (MEALS) ---
-export const getMeals = async () => {
+// CORRECCIÓN: Se renombra getMeals a getMealPlan para mayor claridad.
+export const getMealPlan = async () => {
     const { data } = await API.get('/meals');
     return data;
 };
 
-export const createMeal = async (mealData) => {
-    const { data } = await API.post('/meals', mealData);
-    return data;
-};
-
-export const updateMeal = async (id, mealData) => {
-    const { data } = await API.put(`/meals/${id}`, mealData);
-    return data;
-};
-
-export const deleteMeal = async (id) => {
-    const { data } = await API.delete(`/meals/${id}`);
+// CORRECCIÓN: Se reemplazan las funciones de comidas individuales por una que actualiza el plan completo.
+export const updateMealPlan = async (mealPlanData) => {
+    const { data } = await API.put(`/meals`, mealPlanData);
     return data;
 };
 
@@ -107,6 +99,7 @@ export const getExpenses = async () => {
     return data;
 };
 
+// CORRECCIÓN: Se renombra addExpense a createExpense por consistencia.
 export const createExpense = async (expenseData) => {
     const { data } = await API.post('/expenses', expenseData);
     return data;

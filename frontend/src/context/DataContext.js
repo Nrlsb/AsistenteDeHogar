@@ -10,58 +10,83 @@ export const useData = () => {
 };
 
 export const DataProvider = ({ children }) => {
-    const { token } = useAuth(); // Se mantiene para saber si el usuario está autenticado
+    const { token } = useAuth();
 
     // Estados para cada sección
     const [tasks, setTasks] = useState([]);
     const [shoppingList, setShoppingList] = useState([]);
-    const [meals, setMeals] = useState([]);
+    // MEJORA: El estado del plan de comidas se inicializa como null para un mejor control
+    const [mealPlan, setMealPlan] = useState(null);
     const [expenses, setExpenses] = useState([]);
-    const [loading, setLoading] = useState(true);
+    
+    // MEJORA: Estados de carga y error más granulares
+    const [loading, setLoading] = useState({
+        tasks: true,
+        shopping: true,
+        meals: true,
+        expenses: true
+    });
+    const [error, setError] = useState(null);
 
     useEffect(() => {
         const loadData = async () => {
             if (token) {
-                setLoading(true);
                 try {
                     // Cargar todos los datos en paralelo cuando hay un token
+                    setLoading({ tasks: true, shopping: true, meals: true, expenses: true });
                     const [tasksData, shoppingData, mealsData, expensesData] = await Promise.all([
-                        api.getTasks(),
-                        api.getShoppingList(),
-                        api.getMeals(),
-                        api.getExpenses()
+                        api.getTasks().catch(err => {
+                            console.error('Error fetching tasks:', err);
+                            setError('Error al cargar tareas.');
+                            return [];
+                        }),
+                        api.getShoppingList().catch(err => {
+                            console.error('Error fetching shopping list:', err);
+                            setError('Error al cargar la lista de compras.');
+                            return [];
+                        }),
+                        api.getMealPlan().catch(err => {
+                            console.error('Error fetching meal plan:', err);
+                            setError('Error al cargar el plan de comidas.');
+                            return null;
+                        }),
+                        api.getExpenses().catch(err => {
+                            console.error('Error fetching expenses:', err);
+                            setError('Error al cargar los gastos.');
+                            return [];
+                        })
                     ]);
                     setTasks(tasksData);
                     setShoppingList(shoppingData);
-                    setMeals(mealsData);
+                    setMealPlan(mealsData);
                     setExpenses(expensesData);
                 } catch (error) {
                     console.error('Error fetching initial data:', error);
+                    setError('Ocurrió un error al cargar los datos.');
                 } finally {
-                    setLoading(false);
+                    setLoading({ tasks: false, shopping: false, meals: false, expenses: false });
                 }
             } else {
-                // Si no hay token, limpiar los datos
+                // Si no hay token, limpiar los datos y estados
                 setTasks([]);
                 setShoppingList([]);
-                setMeals([]);
+                setMealPlan(null);
                 setExpenses([]);
-                setLoading(false);
+                setLoading({ tasks: false, shopping: false, meals: false, expenses: false });
             }
         };
 
         loadData();
-    }, [token]); // El efecto se ejecuta cada vez que el token cambia
+    }, [token]);
 
     // --- FUNCIONES DE TAREAS ---
     const createTask = async (taskData) => {
         try {
-            // --- CAMBIO ---
-            // Se usa 'createTask' en lugar de 'addTask' y ya no se pasa el token.
             const newTask = await api.createTask(taskData);
             setTasks(prev => [...prev, newTask]);
         } catch (error) {
             console.error('Error creating task:', error);
+            setError('No se pudo crear la tarea.');
         }
     };
 
@@ -71,6 +96,7 @@ export const DataProvider = ({ children }) => {
             setTasks(prev => prev.map(t => (t._id === id ? updatedTask : t)));
         } catch (error) {
             console.error('Error updating task:', error);
+            setError('No se pudo actualizar la tarea.');
         }
     };
 
@@ -80,6 +106,7 @@ export const DataProvider = ({ children }) => {
             setTasks(prev => prev.filter(t => t._id !== id));
         } catch (error) {
             console.error('Error deleting task:', error);
+            setError('No se pudo eliminar la tarea.');
         }
     };
 
@@ -90,6 +117,7 @@ export const DataProvider = ({ children }) => {
             setShoppingList(prev => [...prev, newItem]);
         } catch (error) {
             console.error('Error adding shopping item:', error);
+            setError('No se pudo añadir el artículo.');
         }
     };
 
@@ -99,6 +127,7 @@ export const DataProvider = ({ children }) => {
             setShoppingList(prev => prev.map(i => (i._id === id ? updatedItem : i)));
         } catch (error) {
             console.error('Error updating shopping item:', error);
+            setError('No se pudo actualizar el artículo.');
         }
     };
 
@@ -108,35 +137,41 @@ export const DataProvider = ({ children }) => {
             setShoppingList(prev => prev.filter(i => i._id !== id));
         } catch (error) {
             console.error('Error deleting shopping item:', error);
+            setError('No se pudo eliminar el artículo.');
         }
     };
     
-    // --- FUNCIONES DE COMIDAS ---
-    const createMeal = async (mealData) => {
-        try {
-            const newMeal = await api.createMeal(mealData);
-            setMeals(prev => [...prev, newMeal]);
-        } catch (error) {
-            console.error('Error creating meal:', error);
-        }
-    };
+    // CORRECCIÓN: Se implementa la lógica para actualizar una comida individual
+    const updateSingleMeal = async (day, mealType, description) => {
+        if (!mealPlan) return;
 
-    const deleteMeal = async (id) => {
+        // Crear una copia profunda del plan actual para evitar mutaciones directas
+        const newMealPlan = JSON.parse(JSON.stringify(mealPlan));
+        
+        // Actualizar el campo específico
+        if (!newMealPlan[day]) {
+            newMealPlan[day] = {};
+        }
+        newMealPlan[day][mealType] = description;
+
         try {
-            await api.deleteMeal(id);
-            setMeals(prev => prev.filter(m => m._id !== id));
+            // Enviar el plan completo actualizado al backend
+            const updatedPlan = await api.updateMealPlan(newMealPlan);
+            setMealPlan(updatedPlan);
         } catch (error) {
-            console.error('Error deleting meal:', error);
+            console.error('Error updating meal plan:', error);
+            setError('No se pudo actualizar el plan de comidas.');
         }
     };
 
     // --- FUNCIONES DE GASTOS ---
-    const createExpense = async (expenseData) => {
+    const addExpense = async (expenseData) => {
         try {
             const newExpense = await api.createExpense(expenseData);
             setExpenses(prev => [...prev, newExpense]);
         } catch (error) {
             console.error('Error creating expense:', error);
+            setError('No se pudo añadir el gasto.');
         }
     };
     
@@ -146,6 +181,7 @@ export const DataProvider = ({ children }) => {
             setExpenses(prev => prev.filter(e => e._id !== id));
         } catch (error) {
             console.error('Error deleting expense:', error);
+            setError('No se pudo eliminar el gasto.');
         }
     };
 
@@ -153,18 +189,19 @@ export const DataProvider = ({ children }) => {
     const value = {
         tasks,
         shoppingList,
-        meals,
+        mealPlan,
         expenses,
         loading,
+        error,
+        setError,
         createTask,
         updateTask,
         deleteTask,
         addShoppingItem,
         updateShoppingItem,
         deleteShoppingItem,
-        createMeal,
-        deleteMeal,
-        createExpense,
+        updateSingleMeal, // CORRECCIÓN: Se exporta la función correcta
+        addExpense,
         deleteExpense
     };
 

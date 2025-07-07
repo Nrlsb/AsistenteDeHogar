@@ -4,25 +4,22 @@ import { useData } from '../../context/DataContext';
 const DAYS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 const MEAL_TYPES = ['Desayuno', 'Almuerzo', 'Cena'];
 
-// Componente interno para manejar la edición de cada celda de comida
 const MealInput = ({ day, mealType, value, onSave }) => {
     const [text, setText] = useState(value || '');
     const [isEditing, setIsEditing] = useState(false);
 
     const handleSave = () => {
-        // Solo guardar si el texto ha cambiado
         if (text !== (value || '')) {
             onSave(day, mealType, text);
         }
         setIsEditing(false);
     };
     
-    // Manejar Enter y Escape para una mejor experiencia de usuario
     const handleKeyDown = (e) => {
         if (e.key === 'Enter') {
             handleSave();
         } else if (e.key === 'Escape') {
-            setText(value || ''); // Revertir cambios
+            setText(value || '');
             setIsEditing(false);
         }
     };
@@ -33,10 +30,10 @@ const MealInput = ({ day, mealType, value, onSave }) => {
                 type="text"
                 value={text}
                 onChange={(e) => setText(e.target.value)}
-                onBlur={handleSave} // Guardar cuando el input pierde el foco
+                onBlur={handleSave}
                 onKeyDown={handleKeyDown}
                 className="w-full p-2 border rounded-md bg-white shadow-sm"
-                autoFocus // Poner el foco automáticamente al hacer clic
+                autoFocus
             />
         );
     }
@@ -51,9 +48,9 @@ const MealInput = ({ day, mealType, value, onSave }) => {
     );
 };
 
-// Componente principal de la sección de comidas
 const MealsSection = () => {
-    const { mealPlan, updateSingleMeal, loadingMeals, error } = useData();
+    // CORRECCIÓN: Se usa 'updateSingleMeal' que ahora está correctamente implementado en DataContext
+    const { mealPlan, updateSingleMeal, loading: loadingMeals, error } = useData();
 
     return (
         <div className="p-4 bg-white rounded-lg shadow">
