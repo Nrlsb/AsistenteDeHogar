@@ -19,7 +19,10 @@ export const AuthProvider = ({ children }) => {
         const fetchUser = async () => {
             if (token) {
                 try {
-                    const userData = await api.getMe(token);
+                    // --- CAMBIO ---
+                    // Ya no necesitamos pasar el token a getMe().
+                    // El interceptor de Axios lo hace automáticamente.
+                    const userData = await api.getMe();
                     setUser(userData);
                 } catch (err) {
                     console.error("Error fetching user:", err);
@@ -35,8 +38,10 @@ export const AuthProvider = ({ children }) => {
     const login = async (email, password) => {
         try {
             setError(null);
+            // --- CAMBIO ---
+            // La función de login en apiService ahora también se encarga
+            // de guardar el token en localStorage.
             const data = await api.login(email, password);
-            localStorage.setItem('token', data.token);
             setToken(data.token);
             toast.success('¡Bienvenido de nuevo!');
         } catch (err) {
@@ -50,8 +55,9 @@ export const AuthProvider = ({ children }) => {
     const register = async (name, email, password) => {
         try {
             setError(null);
+            // --- CAMBIO ---
+            // Lo mismo para el registro.
             const data = await api.register(name, email, password);
-            localStorage.setItem('token', data.token);
             setToken(data.token);
             toast.success('¡Registro exitoso!');
         } catch (err) {
@@ -76,8 +82,6 @@ export const AuthProvider = ({ children }) => {
         register,
         logout,
         loading,
-        // --- CAMBIO ---
-        // Se añaden 'error' y 'setError' al valor del provider para que estén disponibles en los componentes que lo consumen.
         error,
         setError
     };
