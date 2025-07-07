@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useData } from '../../context/DataContext';
-import ExpensesChart from '../charts/ExpensesChart'; // Importamos el componente del gráfico
+import ExpensesChart from '../charts/ExpensesChart';
 
 const GASTO_CATEGORIAS = [
     "Alimentación", "Vivienda", "Transporte", "Servicios", "Ocio",
@@ -8,7 +8,8 @@ const GASTO_CATEGORIAS = [
 ];
 
 const ExpensesSection = () => {
-    const { expenses, addExpense, deleteExpense, loadingExpenses, error } = useData();
+    // CORRECCIÓN: Se usa 'addExpense' y se renombra 'loading' a 'loadingExpenses'
+    const { expenses, addExpense, deleteExpense, loading: loadingExpenses, error } = useData();
     
     const [newExpense, setNewExpense] = useState({
         description: '',
@@ -16,13 +17,11 @@ const ExpensesSection = () => {
         category: GASTO_CATEGORIAS[0]
     });
 
-    // Usamos useMemo para procesar los datos del gráfico solo cuando los gastos cambian
     const chartData = useMemo(() => {
         if (!expenses || expenses.length === 0) {
             return null;
         }
 
-        // Agrupamos los gastos por categoría y sumamos los montos
         const categoryTotals = expenses.reduce((acc, expense) => {
             const category = expense.category;
             const amount = expense.amount;
@@ -41,7 +40,7 @@ const ExpensesSection = () => {
             datasets: [{
                 label: 'Gastos',
                 data,
-                backgroundColor: [ // Colores para cada segmento del gráfico
+                backgroundColor: [
                     '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40',
                     '#C9CBCF', '#E7E9ED', '#7C8C8D'
                 ],
@@ -59,6 +58,7 @@ const ExpensesSection = () => {
     const handleSubmit = (e) => {
         e.preventDefault();
         if (newExpense.description.trim() && newExpense.amount) {
+            // CORRECCIÓN: Se llama a 'addExpense' en lugar de 'createExpense'
             addExpense({
                 ...newExpense,
                 amount: parseFloat(newExpense.amount)
@@ -71,14 +71,12 @@ const ExpensesSection = () => {
         <>
             <h2 className="text-2xl font-bold mb-4">Registro de Gastos</h2>
             
-            {/* Renderizamos el gráfico solo si hay gastos para mostrar */}
             {expenses.length > 0 && chartData && (
                 <div className="mb-8 p-4 border rounded-lg bg-white shadow-sm">
                     <ExpensesChart chartData={chartData} />
                 </div>
             )}
 
-            {/* Formulario para añadir gastos (sin cambios) */}
             <form onSubmit={handleSubmit} className="p-4 border rounded-lg bg-gray-50 mb-6 grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
                 <div className="md:col-span-2">
                     <label htmlFor="description" className="block text-sm font-medium text-gray-700">Descripción</label>
@@ -102,7 +100,6 @@ const ExpensesSection = () => {
             {loadingExpenses && <p>Cargando gastos...</p>}
             {error && <p className="text-red-500">{error}</p>}
 
-            {/* Lista de gastos (sin cambios) */}
             <ul className="space-y-2">
                 {expenses.length > 0 ? (
                     expenses.map(expense => (

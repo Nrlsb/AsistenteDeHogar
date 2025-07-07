@@ -1,41 +1,31 @@
-const mongoose = require('mongoose');
+// CORRECCIÓN: Se usa import en lugar de require
+import mongoose from 'mongoose';
 
-const shoppingCategorySchema = new mongoose.Schema({
-    user: {
-        type: mongoose.Schema.Types.ObjectId,
-        required: true,
-        ref: 'User'
+const shoppingItemSchema = mongoose.Schema(
+    {
+        user: {
+            type: mongoose.Schema.Types.ObjectId,
+            required: true,
+            ref: 'User',
+        },
+        name: {
+            type: String,
+            required: true,
+        },
+        completed: {
+            type: Boolean,
+            default: false,
+        },
+        category: {
+            type: String,
+        },
     },
-    name: {
-        type: String,
-        required: true
+    {
+        timestamps: true,
     }
-});
+);
 
-const shoppingItemSchema = new mongoose.Schema({
-    user: {
-        type: mongoose.Schema.Types.ObjectId,
-        required: true,
-        ref: 'User'
-    },
-    name: {
-        type: String,
-        required: true
-    },
-    purchased: {
-        type: Boolean,
-        default: false
-    },
-    // Corregido: Se elimina 'required: true' para hacer la categoría opcional por ahora.
-    category: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'ShoppingCategory'
-    }
-}, {
-    timestamps: true
-});
-
-const ShoppingCategory = mongoose.model('ShoppingCategory', shoppingCategorySchema);
 const ShoppingItem = mongoose.model('ShoppingItem', shoppingItemSchema);
 
-module.exports = { ShoppingItem, ShoppingCategory };
+// CORRECCIÓN: Se usa export default en lugar de module.exports
+export default ShoppingItem;

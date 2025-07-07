@@ -3,17 +3,18 @@ import { useData } from '../../context/DataContext';
 import TaskItem from '../items/TaskItem';
 
 const TasksSection = () => {
-    const { tasks, addTask, loadingTasks, error } = useData();
+    // CORRECCIÓN: Se usa 'createTask' y se renombra 'loading' a 'loadingTasks'
+    const { tasks, createTask, loading: loadingTasks, error } = useData();
     const [newTask, setNewTask] = useState('');
     const [dueDate, setDueDate] = useState('');
 
     const handleSubmit = (e) => {
         e.preventDefault();
         if (newTask.trim()) {
-            // Pasamos un objeto con la descripción y la fecha
-            addTask({
+            // CORRECCIÓN: Se llama a 'createTask' en lugar de 'addTask'
+            createTask({
                 description: newTask,
-                dueDate: dueDate || null // Si no hay fecha, enviamos null
+                dueDate: dueDate || null
             });
             setNewTask('');
             setDueDate('');

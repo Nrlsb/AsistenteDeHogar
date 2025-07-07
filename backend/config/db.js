@@ -1,17 +1,16 @@
-const mongoose = require('mongoose');
+// CORRECCIÓN: Se usa import en lugar de require
+import mongoose from 'mongoose';
 
 const connectDB = async () => {
     try {
-        // Nos conectamos a la base de datos sin las opciones obsoletas.
-        // Mongoose 8+ las maneja automáticamente.
+        // Nota: Las opciones 'useUnifiedTopology' y 'useNewUrlParser' ya no son necesarias en versiones recientes de Mongoose.
         const conn = await mongoose.connect(process.env.MONGO_URI);
-
         console.log(`MongoDB Conectado: ${conn.connection.host}`);
     } catch (error) {
-        console.error(`Error de Conexión a la Base de Datos: ${error.message}`);
-        // Si la conexión falla, detiene el proceso del servidor
+        console.error(`Error de conexión a la base de datos: ${error.message}`);
         process.exit(1);
     }
 };
 
-module.exports = connectDB;
+// CORRECCIÓN: Se usa export default en lugar de module.exports
+export default connectDB;

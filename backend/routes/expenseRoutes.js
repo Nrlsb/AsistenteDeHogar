@@ -1,63 +1,61 @@
-const express = require('express');
-const router = express.Router();
-const asyncHandler = require('express-async-handler');
-const Expense = require('../models/expenseModel');
-const { protect } = require('../middleware/authMiddleware');
+// CORRECCIÓN: Se usa import en lugar de require
+import express from 'express';
+import Expense from '../models/expenseModel.js';
+import { protect } from '../middleware/authMiddleware.js';
 
-// @desc    Obtener todos los gastos del usuario
+const router = express.Router();
+
+// @desc    Obtener todos los gastos de un usuario
 // @route   GET /api/expenses
 // @access  Private
-const getExpenses = asyncHandler(async (req, res) => {
-    const expenses = await Expense.find({ user: req.user.id }).sort({ createdAt: -1 });
-    res.json(expenses);
+router.get('/', protect, async (req, res) => {
+    try {
+        const expenses = await Expense.find({ user: req.user.id });
+        res.json(expenses);
+    } catch (error) {
+        res.status(500).json({ message: 'Error al obtener los gastos' });
+    }
 });
 
-// @desc    Añadir un nuevo gasto
+// @desc    Crear un nuevo gasto
 // @route   POST /api/expenses
 // @access  Private
-const addExpense = asyncHandler(async (req, res) => {
-    // Extraemos la categoría del cuerpo de la petición
-    const { description, amount, category } = req.body;
-
-    if (!description || !amount || !category) {
-        res.status(400);
-        throw new Error('Por favor, complete todos los campos, incluyendo la categoría');
+router.post('/', protect, async (req, res) => {
+    try {
+        const { description, amount, category } = req.body;
+        if (!description || !amount || !category) {
+            return res.status(400).json({ message: 'Por favor, complete todos los campos' });
+        }
+        const expense = new Expense({
+            description,
+            amount,
+            category,
+            user: req.user.id,
+        });
+        const createdExpense = await expense.save();
+        res.status(201).json(createdExpense);
+    } catch (error) {
+        res.status(400).json({ message: 'Datos de gasto inválidos' });
     }
-
-    const expense = await Expense.create({
-        user: req.user.id,
-        description,
-        amount,
-        category // Guardamos la categoría
-    });
-
-    res.status(201).json(expense);
 });
 
 // @desc    Eliminar un gasto
 // @route   DELETE /api/expenses/:id
 // @access  Private
-const deleteExpense = asyncHandler(async (req, res) => {
-    const expense = await Expense.findById(req.params.id);
+router.delete('/:id', protect, async (req, res) => {
+    try {
+        const expense = await Expense.findById(req.params.id);
 
-    if (!expense) {
-        res.status(404);
-        throw new Error('Gasto no encontrado');
+        if (expense && expense.user.toString() === req.user.id) {
+            await Expense.deleteOne({ _id: req.params.id });
+            res.json({ message: 'Gasto eliminado' });
+        } else {
+            res.status(404).json({ message: 'Gasto no encontrado o no autorizado' });
+        }
+    } catch (error) {
+        res.status(500).json({ message: 'Error al eliminar el gasto' });
     }
-
-    // Asegurarse de que el gasto pertenece al usuario
-    if (expense.user.toString() !== req.user.id) {
-        res.status(401);
-        throw new Error('No autorizado');
-    }
-
-    await expense.deleteOne();
-
-    res.json({ id: req.params.id });
 });
 
-
-router.route('/').get(protect, getExpenses).post(protect, addExpense);
-router.route('/:id').delete(protect, deleteExpense);
-
-module.exports = router;
+// CORRECCIÓN: Se usa export default en lugar de module.exports
+export default router;

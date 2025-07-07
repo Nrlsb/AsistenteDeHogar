@@ -1,27 +1,32 @@
-const mongoose = require('mongoose');
+// CORRECCIÓN: Se usa import en lugar de require
+import mongoose from 'mongoose';
 
-const taskSchema = mongoose.Schema({
-    user: {
-        type: mongoose.Schema.Types.ObjectId,
-        required: true,
-        ref: 'User'
+const taskSchema = mongoose.Schema(
+    {
+        user: {
+            type: mongoose.Schema.Types.ObjectId,
+            required: true,
+            ref: 'User',
+        },
+        description: {
+            type: String,
+            required: true,
+        },
+        completed: {
+            type: Boolean,
+            required: true,
+            default: false,
+        },
+        dueDate: {
+            type: Date,
+        },
     },
-    description: {
-        type: String,
-        required: [true, 'Por favor, añade una descripción']
-    },
-    completed: {
-        type: Boolean,
-        required: true,
-        default: false
-    },
-    // Nuevo campo para la fecha de vencimiento
-    dueDate: {
-        type: Date,
-        required: false // Es opcional
+    {
+        timestamps: true,
     }
-}, {
-    timestamps: true
-});
+);
 
-module.exports = mongoose.model('Task', taskSchema);
+const Task = mongoose.model('Task', taskSchema);
+
+// CORRECCIÓN: Se usa export default en lugar de module.exports
+export default Task;

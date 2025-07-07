@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { useData } from '../../context/DataContext';
-import ShoppingItem from '../items/ShoppingItem'; // Importamos el nuevo componente
+import ShoppingItem from '../items/ShoppingItem';
 
 const ShoppingSection = () => {
-    const { shoppingItems, addShoppingItem, loadingShopping, error } = useData();
+    // CORRECCIÓN: Se usan los nombres correctos del contexto: 'shoppingList' y 'loading'
+    const { shoppingList, addShoppingItem, loading: loadingShopping, error } = useData();
     const [newItem, setNewItem] = useState('');
 
     const handleSubmit = (e) => {
@@ -34,9 +35,9 @@ const ShoppingSection = () => {
             {error && <p className="text-red-500">{error}</p>}
 
             <ul className="space-y-2">
-                {shoppingItems.length > 0 ? (
-                    // Usamos el componente ShoppingItem para renderizar cada artículo
-                    shoppingItems.map(item => (
+                {shoppingList.length > 0 ? (
+                    // Se itera sobre 'shoppingList'
+                    shoppingList.map(item => (
                         <ShoppingItem key={item._id} item={item} />
                     ))
                 ) : (

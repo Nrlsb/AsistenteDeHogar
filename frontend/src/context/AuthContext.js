@@ -1,18 +1,13 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+// nrlsb/asistentedehogar/AsistenteDeHogar-ab8ced350d0a76f79702cd5ab21b0004078dffb3/frontend/src/context/AuthContext.js
+import React, { createContext, useState, useEffect, useContext } from 'react';
+import { toast } from 'react-toastify';
 import * as api from '../services/apiService';
-import { toast } from 'react-toastify'; // Importamos toast para las notificaciones
 
-const defaultAuthContext = {
-    user: null,
-    token: null,
-    login: async () => {},
-    register: async () => {},
-    logout: () => {},
-    loading: true,
-    error: null,
+const AuthContext = createContext();
+
+export const useAuth = () => {
+    return useContext(AuthContext);
 };
-
-const AuthContext = createContext(defaultAuthContext);
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
@@ -21,49 +16,52 @@ export const AuthProvider = ({ children }) => {
     const [error, setError] = useState(null);
 
     useEffect(() => {
-        const verifyUser = async () => {
+        const fetchUser = async () => {
             if (token) {
                 try {
-                    const { data } = await api.getMe();
-                    setUser(data);
+                    // --- CAMBIO ---
+                    // Ya no necesitamos pasar el token a getMe().
+                    // El interceptor de Axios lo hace automáticamente.
+                    const userData = await api.getMe();
+                    setUser(userData);
                 } catch (err) {
-                    console.error("Error de autenticación, token inválido.");
-                    // Limpiamos el estado si el token no es válido
-                    localStorage.removeItem('token');
-                    setToken(null);
-                    setUser(null);
+                    console.error("Error fetching user:", err);
+                    setError('Tu sesión ha expirado. Por favor, inicia sesión de nuevo.');
+                    logout(); // Limpia el token inválido
                 }
             }
             setLoading(false);
         };
-        verifyUser();
+        fetchUser();
     }, [token]);
 
-    const login = async (userData) => {
+    const login = async (email, password) => {
         try {
-            const { data } = await api.login(userData);
-            // La única responsabilidad de login es obtener y establecer el token.
-            localStorage.setItem('token', data.token);
-            setToken(data.token); // Esto activará el useEffect para obtener los datos del usuario
             setError(null);
+            // --- CAMBIO ---
+            // La función de login en apiService ahora también se encarga
+            // de guardar el token en localStorage.
+            const data = await api.login(email, password);
+            setToken(data.token);
             toast.success('¡Bienvenido de nuevo!');
         } catch (err) {
             const errorMessage = err.response?.data?.message || 'Error al iniciar sesión';
             setError(errorMessage);
-            toast.error(errorMessage); // Mostramos el error con una notificación
+            toast.error(errorMessage);
             throw err;
         }
     };
 
-    const register = async (userData) => {
+    const register = async (name, email, password) => {
         try {
-            const { data } = await api.register(userData);
-            localStorage.setItem('token', data.token);
-            setToken(data.token);
             setError(null);
-            toast.success('¡Registro exitoso! Bienvenido.');
+            // --- CAMBIO ---
+            // Lo mismo para el registro.
+            const data = await api.register(name, email, password);
+            setToken(data.token);
+            toast.success('¡Registro exitoso!');
         } catch (err) {
-            const errorMessage = err.response?.data?.message || 'Error al registrarse';
+            const errorMessage = err.response?.data?.message || 'Error en el registro';
             setError(errorMessage);
             toast.error(errorMessage);
             throw err;
@@ -77,11 +75,20 @@ export const AuthProvider = ({ children }) => {
         toast.info('Has cerrado sesión.');
     };
 
-    const value = { user, token, login, register, logout, loading, error };
+    const value = {
+        user,
+        token,
+        login,
+        register,
+        logout,
+        loading,
+        error,
+        setError
+    };
 
-    return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-};
-
-export const useAuth = () => {
-    return useContext(AuthContext);
+    return (
+        <AuthContext.Provider value={value}>
+            {!loading && children}
+        </AuthContext.Provider>
+    );
 };

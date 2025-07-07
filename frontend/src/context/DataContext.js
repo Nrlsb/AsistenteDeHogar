@@ -1,250 +1,213 @@
-import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
+// nrlsb/asistentedehogar/AsistenteDeHogar-ab8ced350d0a76f79702cd5ab21b0004078dffb3/frontend/src/context/DataContext.js
+import React, { createContext, useState, useEffect, useContext } from 'react';
 import * as api from '../services/apiService';
 import { useAuth } from './AuthContext';
-import { toast } from 'react-toastify';
 
-// Objeto con el estado por defecto para el contexto.
-// Esto previene que la aplicación se rompa si un componente
-// intenta acceder al contexto antes de que esté disponible.
-const defaultDataContext = {
-    tasks: [],
-    loadingTasks: false,
-    addTask: () => {},
-    updateTask: () => {},
-    deleteTask: () => {},
-    shoppingItems: [],
-    loadingShopping: false,
-    addShoppingItem: () => {},
-    updateShoppingItem: () => {},
-    deleteShoppingItem: () => {},
-    mealPlan: null,
-    loadingMeals: false,
-    updateSingleMeal: () => {},
-    expenses: [],
-    loadingExpenses: false,
-    addExpense: () => {},
-    deleteExpense: () => {},
-    error: null,
-    modalState: { isOpen: false, title: '', message: '', onConfirm: () => {} },
-    closeModal: () => {},
-    handleConfirm: () => {},
+const DataContext = createContext();
+
+export const useData = () => {
+    return useContext(DataContext);
 };
 
-// Creamos el contexto con el estado por defecto
-const DataContext = createContext(defaultDataContext);
-
 export const DataProvider = ({ children }) => {
-    const { user } = useAuth();
+    const { token } = useAuth();
 
+    // Estados para cada sección
     const [tasks, setTasks] = useState([]);
-    const [shoppingItems, setShoppingItems] = useState([]);
+    const [shoppingList, setShoppingList] = useState([]);
+    // MEJORA: El estado del plan de comidas se inicializa como null para un mejor control
     const [mealPlan, setMealPlan] = useState(null);
     const [expenses, setExpenses] = useState([]);
-    const [loading, setLoading] = useState({ tasks: false, shopping: false, meals: false, expenses: false });
+    
+    // MEJORA: Estados de carga y error más granulares
+    const [loading, setLoading] = useState({
+        tasks: true,
+        shopping: true,
+        meals: true,
+        expenses: true
+    });
     const [error, setError] = useState(null);
 
-    const [modalState, setModalState] = useState({
-        isOpen: false,
-        title: '',
-        message: '',
-        onConfirm: () => {}
-    });
+    useEffect(() => {
+        const loadData = async () => {
+            if (token) {
+                try {
+                    // Cargar todos los datos en paralelo cuando hay un token
+                    setLoading({ tasks: true, shopping: true, meals: true, expenses: true });
+                    const [tasksData, shoppingData, mealsData, expensesData] = await Promise.all([
+                        api.getTasks().catch(err => {
+                            console.error('Error fetching tasks:', err);
+                            setError('Error al cargar tareas.');
+                            return [];
+                        }),
+                        api.getShoppingList().catch(err => {
+                            console.error('Error fetching shopping list:', err);
+                            setError('Error al cargar la lista de compras.');
+                            return [];
+                        }),
+                        api.getMealPlan().catch(err => {
+                            console.error('Error fetching meal plan:', err);
+                            setError('Error al cargar el plan de comidas.');
+                            return null;
+                        }),
+                        api.getExpenses().catch(err => {
+                            console.error('Error fetching expenses:', err);
+                            setError('Error al cargar los gastos.');
+                            return [];
+                        })
+                    ]);
+                    setTasks(tasksData);
+                    setShoppingList(shoppingData);
+                    setMealPlan(mealsData);
+                    setExpenses(expensesData);
+                } catch (error) {
+                    console.error('Error fetching initial data:', error);
+                    setError('Ocurrió un error al cargar los datos.');
+                } finally {
+                    setLoading({ tasks: false, shopping: false, meals: false, expenses: false });
+                }
+            } else {
+                // Si no hay token, limpiar los datos y estados
+                setTasks([]);
+                setShoppingList([]);
+                setMealPlan(null);
+                setExpenses([]);
+                setLoading({ tasks: false, shopping: false, meals: false, expenses: false });
+            }
+        };
 
-    const closeModal = () => setModalState({ isOpen: false, title: '', message: '', onConfirm: () => {} });
+        loadData();
+    }, [token]);
 
-    const handleConfirm = async () => {
-        await modalState.onConfirm();
-        closeModal();
-    };
-
-    const fetchTasks = useCallback(async () => {
-        if (!user) return;
-        setLoading(prev => ({ ...prev, tasks: true }));
+    // --- FUNCIONES DE TAREAS ---
+    const createTask = async (taskData) => {
         try {
-            const { data } = await api.getTasks();
-            setTasks(data);
-        } catch (err) { setError('No se pudieron cargar las tareas.'); } 
-        finally { setLoading(prev => ({ ...prev, tasks: false })); }
-    }, [user]);
-
-    const addTask = async (taskData) => {
-        try {
-            const { data } = await api.addTask(taskData);
-            setTasks(prev => [...prev, data]);
-            toast.success('¡Tarea añadida con éxito!');
-        } catch (err) { 
-            toast.error('Error al añadir la tarea.');
+            const newTask = await api.createTask(taskData);
+            setTasks(prev => [...prev, newTask]);
+        } catch (error) {
+            console.error('Error creating task:', error);
+            setError('No se pudo crear la tarea.');
         }
     };
+
     const updateTask = async (id, taskData) => {
         try {
-            const { data } = await api.updateTask(id, taskData);
-            setTasks(prev => prev.map(t => (t._id === id ? data : t)));
-            if (taskData.description) {
-                toast.success('Tarea actualizada.');
-            }
-        } catch (err) { 
-            toast.error('Error al actualizar la tarea.');
+            const updatedTask = await api.updateTask(id, taskData);
+            setTasks(prev => prev.map(t => (t._id === id ? updatedTask : t)));
+        } catch (error) {
+            console.error('Error updating task:', error);
+            setError('No se pudo actualizar la tarea.');
         }
     };
 
-    const deleteTask = (id) => {
-        setModalState({
-            isOpen: true,
-            title: 'Eliminar Tarea',
-            message: '¿Estás seguro de que deseas eliminar esta tarea? Esta acción no se puede deshacer.',
-            onConfirm: async () => {
-                try {
-                    await api.deleteTask(id);
-                    setTasks(prev => prev.filter(t => t._id !== id));
-                    toast.info('Tarea eliminada.');
-                } catch (err) {
-                    toast.error('Error al eliminar la tarea.');
-                }
-            }
-        });
+    const deleteTask = async (id) => {
+        try {
+            await api.deleteTask(id);
+            setTasks(prev => prev.filter(t => t._id !== id));
+        } catch (error) {
+            console.error('Error deleting task:', error);
+            setError('No se pudo eliminar la tarea.');
+        }
     };
 
-    const fetchShoppingItems = useCallback(async () => {
-        if (!user) return;
-        setLoading(prev => ({ ...prev, shopping: true }));
-        try {
-            const { data } = await api.getShoppingItems();
-            setShoppingItems(data);
-        } catch (err) { setError('No se pudieron cargar los artículos de compra.'); }
-        finally { setLoading(prev => ({ ...prev, shopping: false })); }
-    }, [user]);
-
+    // --- FUNCIONES DE COMPRAS ---
     const addShoppingItem = async (itemData) => {
         try {
-            const { data } = await api.addShoppingItem(itemData);
-            setShoppingItems(prev => [...prev, data]);
-            toast.success('¡Artículo añadido a la lista!');
-        } catch (err) { 
-            toast.error('Error al añadir el artículo.');
+            const newItem = await api.addShoppingItem(itemData);
+            setShoppingList(prev => [...prev, newItem]);
+        } catch (error) {
+            console.error('Error adding shopping item:', error);
+            setError('No se pudo añadir el artículo.');
         }
     };
 
     const updateShoppingItem = async (id, itemData) => {
         try {
-            const { data } = await api.updateShoppingItem(id, itemData);
-            setShoppingItems(prev => prev.map(i => (i._id === id ? data : i)));
-            if (itemData.name) {
-                toast.success('Artículo actualizado.');
-            }
-        } catch (err) { 
-            toast.error('Error al actualizar el artículo.');
+            const updatedItem = await api.updateShoppingItem(id, itemData);
+            setShoppingList(prev => prev.map(i => (i._id === id ? updatedItem : i)));
+        } catch (error) {
+            console.error('Error updating shopping item:', error);
+            setError('No se pudo actualizar el artículo.');
         }
     };
 
-    const deleteShoppingItem = (id) => {
-        setModalState({
-            isOpen: true,
-            title: 'Eliminar Artículo',
-            message: '¿Estás seguro de que deseas eliminar este artículo de la lista? Esta acción no se puede deshacer.',
-            onConfirm: async () => {
-                try {
-                    await api.deleteShoppingItem(id);
-                    setShoppingItems(prev => prev.filter(i => i._id !== id));
-                    toast.info('Artículo eliminado.');
-                } catch (err) {
-                    toast.error('Error al eliminar el artículo.');
-                }
-            }
-        });
-    };
-
-    const fetchMealPlan = useCallback(async () => {
-        if (!user) return;
-        setLoading(prev => ({ ...prev, meals: true }));
+    const deleteShoppingItem = async (id) => {
         try {
-            const { data } = await api.getMealPlan();
-            setMealPlan(data);
-        } catch (err) { 
-            setError('No se pudo cargar el plan de comidas.');
-            console.error(err);
+            await api.deleteShoppingItem(id);
+            setShoppingList(prev => prev.filter(i => i._id !== id));
+        } catch (error) {
+            console.error('Error deleting shopping item:', error);
+            setError('No se pudo eliminar el artículo.');
         }
-        finally { setLoading(prev => ({ ...prev, meals: false })); }
-    }, [user]);
-
-    const updateSingleMeal = async (day, mealType, value) => {
+    };
+    
+    // CORRECCIÓN: Se implementa la lógica para actualizar una comida individual
+    const updateSingleMeal = async (day, mealType, description) => {
         if (!mealPlan) return;
-        const newMealPlan = { ...mealPlan, [day]: { ...mealPlan[day], [mealType]: value }};
+
+        // Crear una copia profunda del plan actual para evitar mutaciones directas
+        const newMealPlan = JSON.parse(JSON.stringify(mealPlan));
+        
+        // Actualizar el campo específico
+        if (!newMealPlan[day]) {
+            newMealPlan[day] = {};
+        }
+        newMealPlan[day][mealType] = description;
+
         try {
-            setMealPlan(newMealPlan); 
-            await api.updateMealPlan(newMealPlan);
-            toast.success('Plan de comidas actualizado.');
-        } catch (err) {
-            toast.error('Error al actualizar la comida.');
-            console.error(err);
-            fetchMealPlan();
+            // Enviar el plan completo actualizado al backend
+            const updatedPlan = await api.updateMealPlan(newMealPlan);
+            setMealPlan(updatedPlan);
+        } catch (error) {
+            console.error('Error updating meal plan:', error);
+            setError('No se pudo actualizar el plan de comidas.');
         }
     };
 
-    const fetchExpenses = useCallback(async () => {
-        if (!user) return;
-        setLoading(prev => ({ ...prev, expenses: true }));
-        try {
-            const { data } = await api.getExpenses();
-            setExpenses(data);
-        } catch (err) { setError('No se pudieron cargar los gastos.'); }
-        finally { setLoading(prev => ({ ...prev, expenses: false })); }
-    }, [user]);
-
+    // --- FUNCIONES DE GASTOS ---
     const addExpense = async (expenseData) => {
         try {
-            const { data } = await api.addExpense(expenseData);
-            setExpenses(prev => [...prev, data].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
-            toast.success('¡Gasto añadido con éxito!');
-        } catch (err) { 
-            toast.error('Error al añadir el gasto.');
+            const newExpense = await api.createExpense(expenseData);
+            setExpenses(prev => [...prev, newExpense]);
+        } catch (error) {
+            console.error('Error creating expense:', error);
+            setError('No se pudo añadir el gasto.');
+        }
+    };
+    
+    const deleteExpense = async (id) => {
+        try {
+            await api.deleteExpense(id);
+            setExpenses(prev => prev.filter(e => e._id !== id));
+        } catch (error) {
+            console.error('Error deleting expense:', error);
+            setError('No se pudo eliminar el gasto.');
         }
     };
 
-    const deleteExpense = (id) => {
-        setModalState({
-            isOpen: true,
-            title: 'Eliminar Gasto',
-            message: '¿Estás seguro de que deseas eliminar este gasto? Esta acción no se puede deshacer.',
-            onConfirm: async () => {
-                try {
-                    await api.deleteExpense(id);
-                    setExpenses(prev => prev.filter(e => e._id !== id));
-                    toast.info('Gasto eliminado.');
-                } catch (err) {
-                    toast.error('Error al eliminar el gasto.');
-                }
-            }
-        });
-    };
-
-    useEffect(() => {
-        if (user) {
-            fetchTasks();
-            fetchShoppingItems();
-            fetchMealPlan();
-            fetchExpenses();
-        }
-    }, [user, fetchTasks, fetchShoppingItems, fetchMealPlan, fetchExpenses]);
 
     const value = {
-        tasks, loadingTasks: loading.tasks, addTask, updateTask, deleteTask,
-        shoppingItems, loadingShopping: loading.shopping, addShoppingItem, updateShoppingItem, deleteShoppingItem,
-        mealPlan, loadingMeals: loading.meals, updateSingleMeal,
-        expenses, loadingExpenses: loading.expenses, addExpense, deleteExpense,
+        tasks,
+        shoppingList,
+        mealPlan,
+        expenses,
+        loading,
         error,
-        modalState,
-        closeModal,
-        handleConfirm
+        setError,
+        createTask,
+        updateTask,
+        deleteTask,
+        addShoppingItem,
+        updateShoppingItem,
+        deleteShoppingItem,
+        updateSingleMeal, // CORRECCIÓN: Se exporta la función correcta
+        addExpense,
+        deleteExpense
     };
 
-    return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
-};
-
-export const useData = () => {
-    const context = useContext(DataContext);
-    if (context === undefined) {
-        throw new Error('useData debe ser usado dentro de un DataProvider');
-    }
-    return context;
+    return (
+        <DataContext.Provider value={value}>
+            {children}
+        </DataContext.Provider>
+    );
 };
