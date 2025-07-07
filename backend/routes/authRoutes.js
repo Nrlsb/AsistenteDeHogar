@@ -6,6 +6,7 @@ const { protect } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
+// Función para generar el token
 const generateToken = (id) => {
     if (!process.env.JWT_SECRET) {
         console.error('FATAL ERROR: La variable de entorno JWT_SECRET no está definida.');
@@ -16,6 +17,9 @@ const generateToken = (id) => {
     });
 };
 
+// @desc    Register a new user
+// @route   POST /api/auth/register
+// @access  Public
 router.post('/register', async (req, res) => {
     const { name, email, password } = req.body;
     try {
@@ -23,7 +27,9 @@ router.post('/register', async (req, res) => {
         if (userExists) {
             return res.status(400).json({ message: 'El usuario ya existe' });
         }
+
         const user = await User.create({ name, email, password });
+
         if (user) {
             res.status(201).json({
                 _id: user._id,
@@ -40,10 +46,15 @@ router.post('/register', async (req, res) => {
     }
 });
 
+// @desc    Auth user & get token
+// @route   POST /api/auth/login
+// @access  Public
 router.post('/login', async (req, res) => {
     const { email, password } = req.body;
     try {
-        const user = await User.findOne({ email }); // Esta es la línea que corrige el error
+        // --- ESTA ES LA LÍNEA CORRECTA QUE SOLUCIONA EL CastError ---
+        const user = await User.findOne({ email });
+
         if (user && (await user.matchPassword(password))) {
             res.json({
                 _id: user._id,
@@ -60,6 +71,9 @@ router.post('/login', async (req, res) => {
     }
 });
 
+// @desc    Get user profile
+// @route   GET /api/auth/me
+// @access  Private
 router.get('/me', protect, async (req, res) => {
     try {
         const user = await User.findById(req.user.id).select('-password');
