@@ -31,7 +31,9 @@ router.post('/register', async (req, res) => {
         const user = await User.create({ name, email, password });
 
         if (user) {
-   p         res.status(201).json({
+            // --- CORRECCIÓN ---
+            // Se eliminó la 'p' que causaba el SyntaxError.
+            res.status(201).json({
                 _id: user._id,
                 name: user.name,
                 email: user.email,
@@ -52,9 +54,6 @@ router.post('/register', async (req, res) => {
 router.post('/login', async (req, res) => {
     const { email, password } = req.body;
     try {
-        // --- ESTA ES LA CORRECCIÓN CRÍTICA ---
-        // El error en tus logs ("CastError") es causado por usar `User.findOne(req.body)`.
-        // La forma correcta es buscar solo por el campo 'email', como se muestra aquí.
         const user = await User.findOne({ email });
 
         if (user && (await user.matchPassword(password))) {
