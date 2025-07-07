@@ -1,34 +1,41 @@
-// CORRECCIÓN: Se usa import en lugar de require
 import jwt from 'jsonwebtoken';
 import User from '../models/userModel.js';
 
-// CORRECCIÓN: Se usa la sintaxis de export para una función nombrada
+/**
+ * Middleware to protect routes that require authentication.
+ * Verifies the JWT token from the Authorization header.
+ */
 export const protect = async (req, res, next) => {
-    let token;
+  let token;
 
-    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
-        try {
-            // Obtener token del header
-            token = req.headers.authorization.split(' ')[1];
+  // Check for the authorization header and ensure it's a Bearer token
+  const authHeader = req.headers.authorization;
 
-            // Verificar el token
-            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+  if (authHeader && authHeader.startsWith('Bearer')) {
+    try {
+      // Extract token from "Bearer <token>" string
+      token = authHeader.split(' ')[1];
 
-            // Obtener usuario del token y adjuntarlo al objeto request
-            req.user = await User.findById(decoded.id).select('-password');
+      // Verify the token using the secret key
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-            if (!req.user) {
-                 return res.status(401).json({ message: 'No autorizado, usuario no encontrado' });
-            }
+      // Find the user by the ID encoded in the token
+      // Attach the user object to the request, excluding the password
+      req.user = await User.findById(decoded.id).select('-password');
 
-            next();
-        } catch (error) {
-            console.error(error);
-            res.status(401).json({ message: 'No autorizado, el token falló' });
-        }
+      // If no user is found with this ID, the token is invalid
+      if (!req.user) {
+        return res.status(401).json({ message: 'Not authorized, user not found' });
+      }
+
+      // If token is valid and user is found, proceed to the next middleware
+      next();
+    } catch (error) {
+      console.error('Token verification error:', error.message);
+      return res.status(401).json({ message: 'Not authorized, token failed' });
     }
-
-    if (!token) {
-        res.status(401).json({ message: 'No autorizado, no se proporcionó un token' });
-    }
+  } else {
+    // If no token or incorrect scheme is provided in the header
+    return res.status(401).json({ message: 'Not authorized, no token provided' });
+  }
 };
