@@ -1,28 +1,31 @@
+// nrlsb/asistentedehogar/AsistenteDeHogar-ab8ced350d0a76f79702cd5ab21b0004078dffb3/backend/server.js
 const express = require('express');
-const cors = require('cors');
+const dotenv = require('dotenv');
 const path = require('path');
-// Carga las variables de entorno desde el archivo .env
-require('dotenv').config();
-
-// Importa la función de conexión a la base de datos
 const connectDB = require('./config/db');
+const taskRoutes = require('./routes/taskRoutes');
+const shoppingRoutes = require('./routes/shoppingRoutes');
+const mealRoutes = require('./routes/mealRoutes');
+const expenseRoutes = require('./routes/expenseRoutes');
+const authRoutes = require('./routes/authRoutes');
 
-// Llama a la función para conectar a la base de datos
+dotenv.config();
 connectDB();
 
 const app = express();
-
-// Middlewares
-app.use(cors());
 app.use(express.json());
 
 // Rutas de la API
-app.use('/api/auth', require('./routes/authRoutes'));
-app.use('/api/tasks', require('./routes/taskRoutes'));
-app.use('/api/shopping', require('./routes/shoppingRoutes'));
-app.use('/api/meals', require('./routes/mealRoutes'));
-app.use('/api/expenses', require('./routes/expenseRoutes'));
+app.use('/api/tasks', taskRoutes);
+app.use('/api/shopping', shoppingRoutes);
+app.use('/api/meals', mealRoutes);
+app.use('/api/expenses', expenseRoutes);
+app.use('/api/auth', authRoutes);
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => console.log(`Servidor corriendo en el puerto ${PORT}`));
+app.listen(PORT, () => {
+    // --- CAMBIO DE VERIFICACIÓN ---
+    // Este mensaje nos confirmará en los logs de Render que la nueva versión se ha desplegado.
+    console.log(`>>>>>> ¡NUEVA VERSIÓN DESPLEGADA CORRECTAMENTE! <<<<<< Servidor corriendo en el puerto ${PORT}`);
+});
