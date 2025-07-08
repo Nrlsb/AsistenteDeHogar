@@ -1,6 +1,12 @@
-[build]
-  command = "npm run build"
-  publish = "frontend/build"
-  functions = "functions"
+# Correct Netlify configuration for a monorepo
 
-# The redirect rule that was causing the issue has been removed.
+[build]
+  # This command will be run from the "Base directory" you set in the Netlify UI (which is 'frontend').
+  command = "npm run build"
+
+  # The "publish" directory is relative to the "Base directory".
+  # Since the build command creates a 'build' folder inside 'frontend', this is the correct path.
+  publish = "build"
+
+[functions]
+  directory = "functions"
