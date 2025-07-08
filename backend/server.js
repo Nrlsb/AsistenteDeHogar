@@ -1,7 +1,7 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
-import bodyParser from 'body-parser'; // Import body-parser
+// We will use the built-in express body parser, so the external 'body-parser' is not needed.
 import connectDB from './config/db.js';
 import authRoutes from './routes/authRoutes.js';
 import taskRoutes from './routes/taskRoutes.js';
@@ -33,11 +33,21 @@ app.use(
   })
 );
 
-// --- Body Parser Middleware ---
-// Use body-parser to correctly parse JSON request bodies.
-// This replaces the old app.use(express.json()).
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+// --- Body Parser Middleware (Standard Express Method) ---
+// This should be placed BEFORE any routes.
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// --- NEW DEBUGGING MIDDLEWARE ---
+// This will run for every request and log the body.
+app.use((req, res, next) => {
+  console.log('--- Request Body Logger ---');
+  console.log('Request Path:', req.path);
+  console.log('Request Method:', req.method);
+  console.log('Request Body:', req.body);
+  console.log('--------------------------');
+  next(); // Move on to the next middleware/route handler
+});
 
 
 // --- API Routes ---
