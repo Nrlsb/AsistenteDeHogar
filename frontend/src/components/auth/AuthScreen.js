@@ -1,6 +1,6 @@
 import React, { useState, useContext } from 'react';
-import { useNavigate } from 'react-router-dom'; // 1. Importar useNavigate
-import { AuthContext } from '../../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import AuthContext from '../../context/AuthContext'; // FIX: Changed to default import (no curly braces)
 import { toast } from 'react-hot-toast';
 
 const AuthScreen = () => {
@@ -9,7 +9,7 @@ const AuthScreen = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const { login, register } = useContext(AuthContext);
-  const navigate = useNavigate(); // 2. Obtener la función de navegación
+  const navigate = useNavigate();
 
   const onSubmit = async (e) => {
     e.preventDefault();
@@ -17,7 +17,7 @@ const AuthScreen = () => {
       try {
         await login({ email, password });
         toast.success('¡Bienvenido de nuevo!');
-        navigate('/'); // 3. Redirigir a la página principal
+        navigate('/');
       } catch (error) {
         toast.error(error.response?.data?.message || 'Error al iniciar sesión');
       }
@@ -25,7 +25,7 @@ const AuthScreen = () => {
       try {
         await register({ name, email, password });
         toast.success('¡Registro exitoso! Bienvenido.');
-        navigate('/'); // 4. Redirigir también después del registro
+        navigate('/');
       } catch (error) {
         toast.error(error.response?.data?.message || 'Error en el registro');
       }
