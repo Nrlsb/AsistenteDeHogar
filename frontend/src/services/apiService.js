@@ -30,24 +30,33 @@ api.interceptors.request.use(
 
 // --- API Functions ---
 
+// Auth
 export const login = (userData) => api.post('/auth/login', userData);
 export const register = (userData) => api.post('/auth/register', userData);
-
-// This function gets the user's profile
 export const getProfile = () => api.get('/auth/profile');
 export const getMe = getProfile; // Alias for compatibility
 
+// Tasks
 export const getTasks = () => api.get('/tasks');
 export const createTask = (taskData) => api.post('/tasks', taskData);
 export const updateTask = (id, taskData) => api.put(`/tasks/${id}`, taskData);
 export const deleteTask = (id) => api.delete(`/tasks/${id}`);
 
+// Shopping
 export const getShoppingItems = () => api.get('/shopping');
-// FIX: Export the same function under the name 'getShoppingList' for compatibility
-export const getShoppingList = getShoppingItems;
-
+export const getShoppingList = getShoppingItems; // Alias for compatibility
 export const createShoppingItem = (itemData) => api.post('/shopping', itemData);
 export const updateShoppingItem = (id, itemData) => api.put(`/shopping/${id}`, itemData);
 export const deleteShoppingItem = (id) => api.delete(`/shopping/${id}`);
 
-// Add other API functions as needed...
+// FIX: Add Meal Plan functions
+export const getMealPlans = () => api.get('/meals');
+export const getMealPlan = getMealPlans; // Alias for compatibility
+export const createMealPlan = (mealData) => api.post('/meals', mealData);
+export const updateMealPlan = (id, mealData) => api.put(`/meals/${id}`, mealData);
+export const deleteMealPlan = (id) => api.delete(`/meals/${id}`);
+
+// Expenses
+export const getExpenses = () => api.get('/expenses');
+export const createExpense = (expenseData) => api.post('/expenses', expenseData);
+export const deleteExpense = (id) => api.delete(`/expenses/${id}`);
