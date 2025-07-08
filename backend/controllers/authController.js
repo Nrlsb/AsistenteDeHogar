@@ -20,12 +20,14 @@ const registerUser = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, salt);
     const user = await User.create({ name, email, password: hashedPassword });
     if (user) {
-      res.status(201).json({
+      const payload = {
         _id: user.id,
         name: user.name,
         email: user.email,
         token: generateToken(user._id),
-      });
+      };
+      console.log('[SUCCESS] Registering user and sending payload:', payload);
+      res.status(201).json(payload);
     } else {
       throw new Error('Invalid user data');
     }
@@ -38,7 +40,6 @@ const registerUser = async (req, res) => {
 const loginUser = async (req, res) => {
   const { email, password } = req.body;
 
-  // Final check for email and password
   if (!email || !password) {
     return res.status(400).json({ message: 'Email or password missing in request' });
   }
@@ -47,13 +48,22 @@ const loginUser = async (req, res) => {
     const user = await User.findOne({ email });
 
     if (user && (await bcrypt.compare(password, user.password))) {
-      res.json({
+      // Create the data payload to be sent to the frontend
+      const payload = {
         _id: user.id,
         name: user.name,
         email: user.email,
         token: generateToken(user._id),
-      });
+      };
+
+      // Log exactly what we are about to send
+      console.log('[SUCCESS] User authenticated. Sending payload:', payload);
+
+      // Explicitly set status to 200 and send the JSON payload
+      res.status(200).json(payload);
+
     } else {
+      console.log(`[FAILURE] Invalid credentials for email: ${email}`);
       res.status(401).json({ message: 'Invalid credentials' });
     }
   } catch (error) {
