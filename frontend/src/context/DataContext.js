@@ -1,6 +1,6 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import * as api from '../services/apiService';
-import { AuthContext } from './AuthContext'; // FIX: Corrected import
+import { AuthContext } from './AuthContext'; // FIX: Named import
 
 export const DataContext = createContext();
 
@@ -33,7 +33,6 @@ export const DataProvider = ({ children }) => {
           setLoading(false);
         }
       } else {
-        // Clear data on logout
         setTasks([]);
         setShoppingList([]);
         setMealPlan([]);
@@ -45,16 +44,11 @@ export const DataProvider = ({ children }) => {
     fetchData();
   }, [user]);
 
-  // Provide state and functions to update state
   const value = {
-    tasks,
-    setTasks,
-    shoppingList,
-    setShoppingList,
-    mealPlan,
-    setMealPlan,
-    expenses,
-    setExpenses,
+    tasks, setTasks,
+    shoppingList, setShoppingList,
+    mealPlan, setMealPlan,
+    expenses, setExpenses,
     loading,
   };
 
