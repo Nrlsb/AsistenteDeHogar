@@ -13,6 +13,7 @@ const generateToken = (id) => {
 // @route   POST /api/auth/register
 // @access  Public
 const registerUser = async (req, res) => {
+  // Destructure for validation and use
   const { name, email, password } = req.body;
 
   if (!name || !email || !password) {
@@ -20,7 +21,7 @@ const registerUser = async (req, res) => {
   }
 
   try {
-    const userExists = await User.findOne({ email: req.body.email });
+    const userExists = await User.findOne({ email });
     if (userExists) {
       return res.status(400).json({ message: 'User already exists' });
     }
@@ -54,12 +55,24 @@ const registerUser = async (req, res) => {
 // @route   POST /api/auth/login
 // @access  Public
 const loginUser = async (req, res) => {
-  try {
-    // Check for user by email, using req.body.email directly
-    const user = await User.findOne({ email: req.body.email });
+  // --- DEBUGGING AND ROBUSTNESS CHANGES ---
 
-    // Check if user exists and then compare password, using req.body.password directly
-    if (user && (await bcrypt.compare(req.body.password, user.password))) {
+  // 1. Log the incoming request body immediately
+  console.log('Login attempt with body:', JSON.stringify(req.body));
+
+  // 2. Destructure email and password from req.body
+  const { email, password } = req.body;
+
+  // 3. Add a check to ensure email and password exist
+  if (!email || !password) {
+    return res.status(400).json({ message: 'Email and password are required' });
+  }
+
+  try {
+    // 4. Use the destructured 'email' variable in the query
+    const user = await User.findOne({ email });
+
+    if (user && (await bcrypt.compare(password, user.password))) {
       res.json({
         _id: user.id,
         name: user.name,
@@ -67,7 +80,6 @@ const loginUser = async (req, res) => {
         token: generateToken(user._id),
       });
     } else {
-      // If user doesn't exist or password doesn't match
       res.status(401).json({ message: 'Invalid credentials' });
     }
   } catch (error) {
