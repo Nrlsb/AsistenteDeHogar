@@ -1,14 +1,20 @@
-# Netlify configuration for a React Single-Page Application (SPA)
-
+# Configuración de compilación para el frontend
 [build]
-  # This command will be run from the "Base directory" you set in the Netlify UI (which should be 'frontend').
-  command = "npm run build"
-  # The "publish" directory is relative to the "Base directory".
-  publish = "build"
+  # Se establece CI=false para evitar que las advertencias detengan la compilación.
+  command = "CI=false npm run build"
+  # El directorio base donde se encuentra el package.json del frontend.
+  base = "frontend"
+  # El directorio donde se publicará el sitio estático compilado.
+  publish = "frontend/build"
 
-# This is the redirect rule that fixes the "Page not found" error.
-# It tells Netlify to serve the index.html file for any path that doesn't match an existing file.
+# Configuración para las funciones serverless del backend
+[functions]
+  # El directorio que contiene el código de tus funciones (tu servidor Express).
+  directory = "backend"
+
+# Regla de redirección para que las llamadas a /api/* del frontend
+# se dirijan a tu función serverless del backend.
 [[redirects]]
-  from = "/*"
-  to = "/index.html"
+  from = "/api/*"
+  to = "/.netlify/functions/server/:splat"
   status = 200

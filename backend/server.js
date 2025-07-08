@@ -1,41 +1,36 @@
-import express from 'express';
-import dotenv from 'dotenv';
-import cors from 'cors';
-import connectDB from './config/db.js';
-import authRoutes from './routes/authRoutes.js';
-import taskRoutes from './routes/taskRoutes.js';
-import shoppingRoutes from './routes/shoppingRoutes.js';
-import mealRoutes from './routes/mealRoutes.js';
-import expenseRoutes from './routes/expenseRoutes.js';
+// Importaciones necesarias
+const express = require('express');
+const mongoose = require('mongoose');
+const dotenv = require('dotenv');
+const cors = require('cors');
+const serverless = require('serverless-http'); // Importamos serverless-http
+const connectDB = require('./config/db');
 
+// Cargar variables de entorno
 dotenv.config();
+
+// Conectar a la base de datos MongoDB
 connectDB();
 
 const app = express();
 
-// --- Middleware ---
-
-// 1. CORS
+// Middleware
 app.use(cors());
-
-// 2. Body Parsers (Standard Express Method)
-// This MUST be before the routes.
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: false }));
 
+// Rutas de la API
+// Se elimina el prefijo "/api" porque Netlify lo gestionará con la redirección.
+// Por ejemplo, una llamada a /api/auth/login será redirigida a la función,
+// y Express la verá como /auth/login.
+app.use('/auth', require('./routes/authRoutes'));
+app.use('/tasks', require('./routes/taskRoutes'));
+app.use('/shopping', require('./routes/shoppingRoutes'));
+app.use('/meals', require('./routes/mealRoutes'));
+app.use('/expenses', require('./routes/expenseRoutes'));
 
-// --- API Routes ---
-app.use('/api/auth', authRoutes);
-app.use('/api/tasks', taskRoutes);
-app.use('/api/shopping', shoppingRoutes);
-app.use('/api/meals', mealRoutes);
-app.use('/api/expenses', expenseRoutes);
+// Se elimina la parte de servir archivos estáticos y app.listen,
+// ya que Netlify se encarga de servir el frontend y de ejecutar el backend.
 
-// Root endpoint
-app.get('/', (req, res) => {
-  res.send('AsistenteDeHogar API is running...');
-});
-
-const PORT = process.env.PORT || 5000;
-
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+// Exportamos la app de Express envuelta por serverless-http para que sea compatible con Netlify Functions
+module.exports.handler = serverless(app);
