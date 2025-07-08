@@ -20,7 +20,7 @@ const registerUser = async (req, res) => {
   }
 
   try {
-    const userExists = await User.findOne({ email });
+    const userExists = await User.findOne({ email: req.body.email });
     if (userExists) {
       return res.status(400).json({ message: 'User already exists' });
     }
@@ -45,7 +45,7 @@ const registerUser = async (req, res) => {
       res.status(400).json({ message: 'Invalid user data' });
     }
   } catch (error) {
-    console.error('Error in registerUser:', error); // <-- ADDED LOGGING
+    console.error('Error in registerUser:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -54,12 +54,12 @@ const registerUser = async (req, res) => {
 // @route   POST /api/auth/login
 // @access  Public
 const loginUser = async (req, res) => {
-  const { email, password } = req.body;
-
   try {
-    const user = await User.findOne({ email });
+    // Check for user by email, using req.body.email directly
+    const user = await User.findOne({ email: req.body.email });
 
-    if (user && (await bcrypt.compare(password, user.password))) {
+    // Check if user exists and then compare password, using req.body.password directly
+    if (user && (await bcrypt.compare(req.body.password, user.password))) {
       res.json({
         _id: user.id,
         name: user.name,
@@ -67,10 +67,11 @@ const loginUser = async (req, res) => {
         token: generateToken(user._id),
       });
     } else {
-      res.status(400).json({ message: 'Invalid credentials' });
+      // If user doesn't exist or password doesn't match
+      res.status(401).json({ message: 'Invalid credentials' });
     }
   } catch (error) {
-    console.error('Error in loginUser:', error); // <-- ADDED LOGGING
+    console.error('Error in loginUser:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -80,10 +81,9 @@ const loginUser = async (req, res) => {
 // @access  Private
 const getUserProfile = async (req, res) => {
   try {
-    // The user is attached to the request in the protect middleware
     res.status(200).json(req.user);
   } catch (error) {
-    console.error('Error in getUserProfile:', error); // <-- ADDED LOGGING
+    console.error('Error in getUserProfile:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };
