@@ -1,7 +1,6 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
-// We will use the built-in express body parser, so the external 'body-parser' is not needed.
 import connectDB from './config/db.js';
 import authRoutes from './routes/authRoutes.js';
 import taskRoutes from './routes/taskRoutes.js';
@@ -14,40 +13,15 @@ connectDB();
 
 const app = express();
 
-// --- CORS Configuration ---
-const allowedOrigins = [
-  'http://localhost:3000',
-  'https://asistentedehogar.onrender.com',
-  'https://asistente-hogar.netlify.app',
-];
+// --- Middleware ---
 
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      if (!origin || allowedOrigins.indexOf(origin) !== -1 || origin.endsWith('--asistente-hogar.netlify.app')) {
-        callback(null, true);
-      } else {
-        callback(new Error('Not allowed by CORS'));
-      }
-    },
-  })
-);
+// 1. CORS
+app.use(cors());
 
-// --- Body Parser Middleware (Standard Express Method) ---
-// This should be placed BEFORE any routes.
+// 2. Body Parsers (Standard Express Method)
+// This MUST be before the routes.
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// --- NEW DEBUGGING MIDDLEWARE ---
-// This will run for every request and log the body.
-app.use((req, res, next) => {
-  console.log('--- Request Body Logger ---');
-  console.log('Request Path:', req.path);
-  console.log('Request Method:', req.method);
-  console.log('Request Body:', req.body);
-  console.log('--------------------------');
-  next(); // Move on to the next middleware/route handler
-});
 
 
 // --- API Routes ---
