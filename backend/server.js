@@ -13,11 +13,11 @@ connectDB();
 
 const app = express();
 
-// --- Updated CORS Configuration ---
+// --- Updated and Corrected CORS Configuration ---
 const allowedOrigins = [
   'http://localhost:3000', // For local development
   'https://asistentedehogar.onrender.com', // Your backend URL
-  'https://asistente-de-hogar.netlify.app', // Your production frontend URL
+  'https://asistente-hogar.netlify.app', // CORRECTED production frontend URL
 ];
 
 app.use(
@@ -28,10 +28,11 @@ app.use(
         return callback(null, true);
       }
 
-      // Check if the origin is in the allowed list OR is a Netlify deploy preview URL
+      // Check if the origin is in the allowed list OR is a Netlify deploy preview URL.
+      // Netlify previews often end with '--<your-site-name>.netlify.app'
       if (
         allowedOrigins.indexOf(origin) !== -1 ||
-        /--asistente-hogar\.netlify\.app$/.test(origin)
+        origin.endsWith('--asistente-hogar.netlify.app')
       ) {
         callback(null, true);
       } else {
