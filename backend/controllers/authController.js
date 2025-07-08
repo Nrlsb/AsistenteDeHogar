@@ -13,28 +13,18 @@ const generateToken = (id) => {
 // @route   POST /api/auth/register
 // @access  Public
 const registerUser = async (req, res) => {
-  // Destructure for validation and use
   const { name, email, password } = req.body;
-
   if (!name || !email || !password) {
     return res.status(400).json({ message: 'Please add all fields' });
   }
-
   try {
     const userExists = await User.findOne({ email });
     if (userExists) {
       return res.status(400).json({ message: 'User already exists' });
     }
-
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
-
-    const user = await User.create({
-      name,
-      email,
-      password: hashedPassword,
-    });
-
+    const user = await User.create({ name, email, password: hashedPassword });
     if (user) {
       res.status(201).json({
         _id: user.id,
@@ -55,24 +45,28 @@ const registerUser = async (req, res) => {
 // @route   POST /api/auth/login
 // @access  Public
 const loginUser = async (req, res) => {
-  // --- DEBUGGING AND ROBUSTNESS CHANGES ---
-
-  // 1. Log the incoming request body immediately
-  console.log('Login attempt with body:', JSON.stringify(req.body));
-
-  // 2. Destructure email and password from req.body
+  console.log('--- New Login Attempt ---');
   const { email, password } = req.body;
 
-  // 3. Add a check to ensure email and password exist
   if (!email || !password) {
+    console.log('[DEBUG] Login failed: Email or password missing from request body.');
     return res.status(400).json({ message: 'Email and password are required' });
   }
 
   try {
-    // 4. Use the destructured 'email' variable in the query
+    console.log(`[DEBUG] Searching for user with email: ${email}`);
     const user = await User.findOne({ email });
 
-    if (user && (await bcrypt.compare(password, user.password))) {
+    if (!user) {
+      console.log(`[DEBUG] Login failed: User with email ${email} not found in database.`);
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    console.log(`[DEBUG] User found: ${user.name}. Comparing passwords...`);
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (isMatch) {
+      console.log(`[DEBUG] Password match for user ${email}. Sending token.`);
       res.json({
         _id: user.id,
         name: user.name,
@@ -80,10 +74,11 @@ const loginUser = async (req, res) => {
         token: generateToken(user._id),
       });
     } else {
+      console.log(`[DEBUG] Login failed: Password mismatch for user ${email}.`);
       res.status(401).json({ message: 'Invalid credentials' });
     }
   } catch (error) {
-    console.error('Error in loginUser:', error);
+    console.error('[CRITICAL] An unexpected error occurred in loginUser:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };
