@@ -1,6 +1,7 @@
+// VERSION FINAL Y CORRECTA - 7 de Julio
 import React, { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AuthContext } from '../../context/AuthContext'; // FIX: Reverted to named  import { }
+import { AuthContext } from '../../context/AuthContext'; // Esta es la línea correcta
 import { toast } from 'react-hot-toast';
 
 const AuthScreen = () => {
@@ -116,6 +117,6 @@ const AuthScreen = () => {
       </div>
     </div>
   );
-}; 
- 
+};
+
 export default AuthScreen;
