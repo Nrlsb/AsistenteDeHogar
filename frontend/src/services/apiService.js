@@ -35,8 +35,7 @@ export const register = (userData) => api.post('/auth/register', userData);
 
 // This function gets the user's profile
 export const getProfile = () => api.get('/auth/profile');
-// FIX: Export the same function under the name 'getMe' for compatibility
-export const getMe = getProfile;
+export const getMe = getProfile; // Alias for compatibility
 
 export const getTasks = () => api.get('/tasks');
 export const createTask = (taskData) => api.post('/tasks', taskData);
@@ -44,6 +43,9 @@ export const updateTask = (id, taskData) => api.put(`/tasks/${id}`, taskData);
 export const deleteTask = (id) => api.delete(`/tasks/${id}`);
 
 export const getShoppingItems = () => api.get('/shopping');
+// FIX: Export the same function under the name 'getShoppingList' for compatibility
+export const getShoppingList = getShoppingItems;
+
 export const createShoppingItem = (itemData) => api.post('/shopping', itemData);
 export const updateShoppingItem = (id, itemData) => api.put(`/shopping/${id}`, itemData);
 export const deleteShoppingItem = (id) => api.delete(`/shopping/${id}`);
