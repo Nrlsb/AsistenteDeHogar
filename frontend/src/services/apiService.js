@@ -1,111 +1,48 @@
-// nrlsb/asistentedehogar/AsistenteDeHogar-ab8ced350d0a76f79702cd5ab21b0004078dffb3/frontend/src/services/apiService.js
 import axios from 'axios';
 
-const API = axios.create({
-    baseURL: '/api',
+// This now directly uses the environment variable.
+// If the variable is not set, it will cause an error, which is better
+// than failing silently by using a wrong URL.
+const API_URL = process.env.REACT_APP_API_URL;
+
+if (!API_URL) {
+  throw new Error("Missing REACT_APP_API_URL environment variable. Please set it in your .env file or hosting provider.");
+}
+
+const api = axios.create({
+  baseURL: API_URL,
 });
 
-// Interceptor que añade el token de autorización a cada solicitud
-API.interceptors.request.use((config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
+// Add a request interceptor to include the token in headers
+api.interceptors.request.use(
+  (config) => {
+    try {
+      const user = JSON.parse(localStorage.getItem('user'));
+      if (user && user.token) {
+        config.headers['Authorization'] = `Bearer ${user.token}`;
+      }
+    } catch (e) {
+      console.error("Could not parse user from localStorage", e);
     }
     return config;
-}, (error) => {
+  },
+  (error) => {
     return Promise.reject(error);
-});
+  }
+);
 
-// --- FUNCIONES DE AUTENTICACIÓN ---
-export const login = async (email, password) => {
-    const { data } = await API.post('/auth/login', { email, password });
-    if (data.token) {
-        localStorage.setItem('token', data.token);
-    }
-    return data;
-};
+export const login = (userData) => api.post('/auth/login', userData);
+export const register = (userData) => api.post('/auth/register', userData);
+export const getProfile = () => api.get('/auth/profile');
 
-export const register = async (name, email, password) => {
-    const { data } = await API.post('/auth/register', { name, email, password });
-    if (data.token) {
-        localStorage.setItem('token', data.token);
-    }
-    return data;
-};
+export const getTasks = () => api.get('/tasks');
+export const createTask = (taskData) => api.post('/tasks', taskData);
+export const updateTask = (id, taskData) => api.put(`/tasks/${id}`, taskData);
+export const deleteTask = (id) => api.delete(`/tasks/${id}`);
 
-export const getMe = async () => {
-    const { data } = await API.get('/auth/me');
-    return data;
-};
+export const getShoppingItems = () => api.get('/shopping');
+export const createShoppingItem = (itemData) => api.post('/shopping', itemData);
+export const updateShoppingItem = (id, itemData) => api.put(`/shopping/${id}`, itemData);
+export const deleteShoppingItem = (id) => api.delete(`/shopping/${id}`);
 
-// --- FUNCIONES DE TAREAS (TASKS) ---
-export const getTasks = async () => {
-    const { data } = await API.get('/tasks');
-    return data;
-};
-
-export const createTask = async (taskData) => {
-    const { data } = await API.post('/tasks', taskData);
-    return data;
-};
-
-export const updateTask = async (id, taskData) => {
-    const { data } = await API.put(`/tasks/${id}`, taskData);
-    return data;
-};
-
-export const deleteTask = async (id) => {
-    const { data } = await API.delete(`/tasks/${id}`);
-    return data;
-};
-
-// --- FUNCIONES DE LISTA DE COMPRAS (SHOPPING) ---
-export const getShoppingList = async () => {
-    const { data } = await API.get('/shopping');
-    return data;
-};
-
-export const addShoppingItem = async (itemData) => {
-    const { data } = await API.post('/shopping', itemData);
-    return data;
-};
-
-export const updateShoppingItem = async (id, itemData) => {
-    const { data } = await API.put(`/shopping/${id}`, itemData);
-    return data;
-};
-
-export const deleteShoppingItem = async (id) => {
-    const { data } = await API.delete(`/shopping/${id}`);
-    return data;
-};
-
-// --- FUNCIONES DE PLAN DE COMIDAS (MEALS) ---
-// CORRECCIÓN: Se renombra getMeals a getMealPlan para mayor claridad.
-export const getMealPlan = async () => {
-    const { data } = await API.get('/meals');
-    return data;
-};
-
-// CORRECCIÓN: Se reemplazan las funciones de comidas individuales por una que actualiza el plan completo.
-export const updateMealPlan = async (mealPlanData) => {
-    const { data } = await API.put(`/meals`, mealPlanData);
-    return data;
-};
-
-// --- FUNCIONES DE GASTOS (EXPENSES) ---
-export const getExpenses = async () => {
-    const { data } = await API.get('/expenses');
-    return data;
-};
-
-// CORRECCIÓN: Se renombra addExpense a createExpense por consistencia.
-export const createExpense = async (expenseData) => {
-    const { data } = await API.post('/expenses', expenseData);
-    return data;
-};
-
-export const deleteExpense = async (id) => {
-    const { data } = await API.delete(`/expenses/${id}`);
-    return data;
-};
+// Add other API functions as needed...

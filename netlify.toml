@@ -1,24 +1,6 @@
-# Configuración base de construcción para el frontend
 [build]
-  # Directorio base del proyecto de frontend. Netlify se moverá a esta carpeta antes de construir.
-  base = "frontend"
-  # Comando para construir el proyecto de React. Se ejecuta desde el directorio base.
   command = "npm run build"
-  # Directorio donde se guardan los archivos de producción. Es relativo al directorio base.
-  publish = "build"
+  publish = "frontend/build"
+  functions = "functions"
 
-# Redirección de proxy para las llamadas a la API.
-# ¡ACCIÓN REQUERIDA! Asegúrate de que esta URL sea la de tu backend en Render.
-[[redirects]]
-  from = "/api/*"
-  to = "https://asistentedehogarapi.onrender.com/api/:splat" # <--- VERIFICA ESTA URL
-  status = 200
-  force = true
-
-# Redirección estándar para Single Page Applications (SPA) como React.
-# Esto asegura que las rutas del lado del cliente funcionen correctamente.
-# Debe ir DESPUÉS de la redirección del proxy.
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
+# The redirect rule that was causing the issue has been removed.
