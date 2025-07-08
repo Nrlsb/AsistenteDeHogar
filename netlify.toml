@@ -1,12 +1,14 @@
-# Correct Netlify configuration for a monorepo
+# Netlify configuration for a React Single-Page Application (SPA)
 
 [build]
-  # This command will be run from the "Base directory" you set in the Netlify UI (which is 'frontend').
+  # This command will be run from the "Base directory" you set in the Netlify UI (which should be 'frontend').
   command = "npm run build"
-
   # The "publish" directory is relative to the "Base directory".
-  # Since the build command creates a 'build' folder inside 'frontend', this is the correct path.
   publish = "build"
 
-[functions]
-  directory = "functions"
+# This is the redirect rule that fixes the "Page not found" error.
+# It tells Netlify to serve the index.html file for any path that doesn't match an existing file.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
