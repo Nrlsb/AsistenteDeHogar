@@ -28,7 +28,7 @@ api.interceptors.request.use(
   }
 );
 
-// --- API Functions ---
+// --- API Functions (Complete & Final Version) ---
 
 // Auth
 export const login = (userData) => api.post('/auth/login', userData);
@@ -39,6 +39,7 @@ export const getMe = getProfile; // Alias for compatibility
 // Tasks
 export const getTasks = () => api.get('/tasks');
 export const createTask = (taskData) => api.post('/tasks', taskData);
+export const addTask = createTask; // Proactive alias
 export const updateTask = (id, taskData) => api.put(`/tasks/${id}`, taskData);
 export const deleteTask = (id) => api.delete(`/tasks/${id}`);
 
@@ -46,17 +47,20 @@ export const deleteTask = (id) => api.delete(`/tasks/${id}`);
 export const getShoppingItems = () => api.get('/shopping');
 export const getShoppingList = getShoppingItems; // Alias for compatibility
 export const createShoppingItem = (itemData) => api.post('/shopping', itemData);
+export const addShoppingItem = createShoppingItem; // FIX for current error
 export const updateShoppingItem = (id, itemData) => api.put(`/shopping/${id}`, itemData);
 export const deleteShoppingItem = (id) => api.delete(`/shopping/${id}`);
 
-// FIX: Add Meal Plan functions
+// Meal Plans
 export const getMealPlans = () => api.get('/meals');
 export const getMealPlan = getMealPlans; // Alias for compatibility
 export const createMealPlan = (mealData) => api.post('/meals', mealData);
+export const addMealPlan = createMealPlan; // Proactive alias
 export const updateMealPlan = (id, mealData) => api.put(`/meals/${id}`, mealData);
 export const deleteMealPlan = (id) => api.delete(`/meals/${id}`);
 
 // Expenses
 export const getExpenses = () => api.get('/expenses');
 export const createExpense = (expenseData) => api.post('/expenses', expenseData);
+export const addExpense = createExpense; // Proactive alias
 export const deleteExpense = (id) => api.delete(`/expenses/${id}`);
