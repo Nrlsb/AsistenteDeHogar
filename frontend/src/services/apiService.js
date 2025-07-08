@@ -1,8 +1,5 @@
 import axios from 'axios';
 
-// This now directly uses the environment variable.
-// If the variable is not set, it will cause an error, which is better
-// than failing silently by using a wrong URL.
 const API_URL = process.env.REACT_APP_API_URL;
 
 if (!API_URL) {
@@ -31,9 +28,15 @@ api.interceptors.request.use(
   }
 );
 
+// --- API Functions ---
+
 export const login = (userData) => api.post('/auth/login', userData);
 export const register = (userData) => api.post('/auth/register', userData);
+
+// This function gets the user's profile
 export const getProfile = () => api.get('/auth/profile');
+// FIX: Export the same function under the name 'getMe' for compatibility
+export const getMe = getProfile;
 
 export const getTasks = () => api.get('/tasks');
 export const createTask = (taskData) => api.post('/tasks', taskData);
